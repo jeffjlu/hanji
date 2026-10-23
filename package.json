@@ -16,7 +16,9 @@
     "db:migrate": "pnpm --filter @hanji/db run db:migrate",
     "db:seed": "pnpm --filter @hanji/db run db:seed",
     "dev": "pnpm --filter @hanji/api run dev & pnpm --filter @hanji/web run dev",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
