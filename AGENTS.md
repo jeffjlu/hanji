@@ -68,9 +68,9 @@ pnpm e2e
 - **Linting**: ESLint 9 with TypeScript ESLint, Prettier for formatting
 - **Testing**: Vitest for unit/integration, Playwright for e2e
 - **Database**: PostgreSQL 16+, Drizzle ORM, migrations in `packages/db/migrations`
-- **API**: Fastify with Zod validation, OpenAPI generated from schemas
+- **API**: Fastify with Zod validation (no generated OpenAPI; one origin serves app + API)
 - **Web**: Vite, React 19, React Router, Tailwind CSS v4, shadcn/ui
-- **Auth**: Email/password, Argon2id, server-side sessions, httpOnly cookies, CSRF tokens
+- **Auth**: Email/password, Argon2id, server-side sessions, httpOnly SameSite=Lax cookies, Origin check on state-changing requests (no CSRF tokens)
 - **Offline-first**: Dexie (IndexedDB) for local storage, Workbox for PWA
 
 ## Git
