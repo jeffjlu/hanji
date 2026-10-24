@@ -44,6 +44,7 @@ export const configSchema = dbConfigSchema
       'must be an origin such as http://localhost:5173 (no path, no trailing slash)'
     ),
     REGISTRATION_CODE: requiredString.min(8, 'must be at least 8 characters'),
+    PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   })
   .refine(
     (c) => !(c.NODE_ENV === 'production' && c.SESSION_SECRET.startsWith(PLACEHOLDER_PREFIX)),
@@ -106,5 +107,6 @@ export function redactConfig(config: Config): Record<string, string> {
     WEB_ORIGIN: config.WEB_ORIGIN,
     SESSION_SECRET: '[redacted]',
     REGISTRATION_CODE: '[redacted]',
+    PORT: String(config.PORT),
   };
 }
