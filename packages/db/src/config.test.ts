@@ -35,7 +35,7 @@ describe('loadConfig', () => {
       const env: Record<string, string | undefined> = { ...valid };
       delete env[name];
       expect(messageFor(env)).toContain(`${name}: is required`);
-    },
+    }
   );
 
   it('treats an empty value as missing', () => {
@@ -80,7 +80,9 @@ describe('loadConfig', () => {
 
 describe('loadDbConfig', () => {
   it('needs only DATABASE_URL', () => {
-    expect(loadDbConfig({ DATABASE_URL: valid.DATABASE_URL }).DATABASE_URL).toBe(valid.DATABASE_URL);
+    expect(loadDbConfig({ DATABASE_URL: valid.DATABASE_URL }).DATABASE_URL).toBe(
+      valid.DATABASE_URL
+    );
   });
 
   it('names DATABASE_URL when missing', () => {
