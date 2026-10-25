@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { loadDbConfig } from './config.js';
 
 const valid = {
-  DATABASE_URL: 'postgres://user:pw@localhost:5432/app'
+  DATABASE_URL: 'postgres://user:pw@localhost:5432/app',
 };
 
 describe('loadDbConfig', () => {
