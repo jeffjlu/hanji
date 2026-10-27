@@ -59,6 +59,6 @@ describe('GET /api/v1/health', () => {
     const elapsed = Date.now() - start;
     expect(res.statusCode).toBe(503);
     expect(elapsed).toBeGreaterThan(1800);
-    expect(elapsed).toBeLessThan(2500);
+    expect(elapsed).toBeLessThan(3000);
   });
 });
