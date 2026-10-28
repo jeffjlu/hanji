@@ -3,6 +3,7 @@ import helmet from '@fastify/helmet';
 import { type Config } from './config.js';
 import { createDb } from '@hanji/db';
 import { apiRoutes } from './routes/index.js';
+import { errorHandler } from './error-handler.js';
 
 export async function buildApp(config: Config) {
   const app = Fastify({
@@ -22,7 +23,9 @@ export async function buildApp(config: Config) {
 
   await app.register(helmet);
 
-  // TODO: add error and not-found handlers
+  // TODO: add not-found handlers
+
+  app.setErrorHandler(errorHandler);
 
   const { sql, close } = createDb(config.DATABASE_URL);
   await app.register(apiRoutes(sql), { prefix: '/api/v1' });
