@@ -3,7 +3,7 @@ import helmet from '@fastify/helmet';
 import { type Config } from './config.js';
 import { createDb } from '@hanji/db';
 import { apiRoutes } from './routes/index.js';
-import { errorHandler } from './error-handler.js';
+import { errorHandler } from './errors.js';
 
 export async function buildApp(config: Config) {
   const app = Fastify({
