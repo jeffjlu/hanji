@@ -1,12 +1,12 @@
 import Fastify from 'fastify';
-import { errorHandler, HttpError } from './errors.js';
+import { errorHandler, HttpError, notFoundHandler } from './errors.js';
 import { ZodError } from 'zod';
 import { describe, it, expect } from 'vitest';
 import { type ProblemDetails, type FieldProblem } from '@hanji/schemas';
 import pinoTest from 'pino-test';
 import { STATUS_CODES } from 'node:http';
 
-type LogEntry = { level: number; msg: string; err?: unknown };
+type LogEntry = { level: number; msg: string; err?: unknown; url?: string };
 
 async function assertErrorHandler(
   error: unknown,
@@ -157,5 +157,32 @@ describe('errorHandler', () => {
         message: 'This is not an error object',
       });
     });
+  });
+
+  it('should handle NotFound errors and return 404 status code', async () => {
+    const stream = pinoTest.sink();
+    const app = Fastify({ logger: { stream } });
+    app.setErrorHandler(errorHandler);
+    app.setNotFoundHandler(notFoundHandler);
+
+    const response = await app.inject({ method: 'GET', url: '/notFound' });
+    expect(response.statusCode).toBe(404);
+    const problem: ProblemDetails = response.json();
+    expect(problem.type).toBe('about:blank');
+    expect(problem.title).toBe(STATUS_CODES[404]);
+    expect(problem.status).toBe(404);
+    expect(problem.requestId).toBeDefined();
+
+    await pinoTest.consecutive(stream, [
+      (log: { level: number; msg: string }) => {
+        expect(log.level).toBe(30);
+        expect(log.msg).toBe('incoming request');
+      },
+      (log: LogEntry) => {
+        expect(log.level).toBe(40);
+        expect(log.msg).toBe('Not found');
+        expect(log.url).toBe('/notFound');
+      },
+    ]);
   });
 });

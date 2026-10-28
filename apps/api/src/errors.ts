@@ -61,3 +61,9 @@ export function errorHandler(error: unknown, request: FastifyRequest, reply: Fas
     sendProblem(request, reply, status);
   }
 }
+
+export function notFoundHandler(request: FastifyRequest, reply: FastifyReply) {
+  const status = 404;
+  request.log.warn({ url: request.url }, 'Not found');
+  sendProblem(request, reply, status, { detail: 'Resource not found' });
+}
