@@ -25,3 +25,4 @@ export function createDb(databaseUrl: string, options: CreateDbOptions = {}) {
 }
 
 export type Database = ReturnType<typeof createDb>['db'];
+export type Sql = ReturnType<typeof createDb>['sql'];
