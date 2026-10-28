@@ -8,8 +8,8 @@
     "test": "vitest run",
     "lint": "eslint . --ext .ts",
     "typecheck": "tsc --noEmit",
-    "dev": "tsx watch src/index.ts",
-    "start": "tsx src/index.ts"
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.3",
