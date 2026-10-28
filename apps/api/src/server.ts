@@ -1,5 +1,5 @@
 import { loadDotEnv, ConfigError } from '@hanji/db';
-import { type Config, loadConfig } from './config.js';
+import { type Config, loadConfig, redactConfig } from './config.js';
 import { buildApp } from './app.js';
 
 loadDotEnv();
@@ -18,6 +18,8 @@ function loadConfigOrExit(): Config {
 
 const config = loadConfigOrExit();
 const app = await buildApp(config);
+
+app.log.info({ config: redactConfig(config) }, 'configuration loaded');
 
 try {
   await app.listen({
