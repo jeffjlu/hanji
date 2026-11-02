@@ -64,7 +64,7 @@ export async function createTestDatabase() {
 
 export function resetTables(sql: Sql): Promise<void> {
   return sql.begin(async (tx) => {
-    const rows = await tx<{ name: string }[]>`select current_database()`;
+    const rows = await tx<{ name: string }[]>`select current_database() as name`;
     const databaseName = rows[0]?.name;
     if (!databaseName || !TEST_DB_NAME_PATTERN.test(databaseName)) {
       throw new Error(`Refusing to reset a non-test database: ${databaseName}`);
