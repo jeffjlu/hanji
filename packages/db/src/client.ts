@@ -24,5 +24,6 @@ export function createDb(databaseUrl: string, options: CreateDbOptions = {}) {
   };
 }
 
-export type Database = ReturnType<typeof createDb>['db'];
-export type Sql = ReturnType<typeof createDb>['sql'];
+export type DbHandle = ReturnType<typeof createDb>;
+export type Database = DbHandle['db'];
+export type Sql = DbHandle['sql'];

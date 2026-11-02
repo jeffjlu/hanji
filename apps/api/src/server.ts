@@ -1,4 +1,4 @@
-import { loadDotEnv, ConfigError } from '@hanji/db';
+import { createDb, loadDotEnv, ConfigError } from '@hanji/db';
 import { type Config, loadConfig, redactConfig } from './config.js';
 import { buildApp } from './app.js';
 
@@ -17,7 +17,8 @@ function loadConfigOrExit(): Config {
 }
 
 const config = loadConfigOrExit();
-const app = await buildApp(config);
+const deps = createDb(config.DATABASE_URL);
+const app = await buildApp(config, deps);
 
 app.log.info({ config: redactConfig(config) }, 'configuration loaded');
 
