@@ -1,10 +1,10 @@
 import { healthRoutes } from './health.js';
-import { type Sql } from '@hanji/db';
+import { type Deps } from '../deps.js';
 import { type FastifyPluginAsync, type FastifyInstance } from 'fastify';
 
-export function apiRoutes(sql: Sql): FastifyPluginAsync {
+export function apiRoutes(deps: Deps): FastifyPluginAsync {
   return async (app: FastifyInstance) => {
-    await app.register(healthRoutes(sql));
+    await app.register(healthRoutes(deps.sql));
     // TODO: add rest of routes
   };
 }
