@@ -5,7 +5,7 @@ import {
   parseLoginBody,
   parseRegisterBody,
   toCurrentUser,
-} from './schemas-stub.js';
+} from '../src/schemas-stub.js';
 
 describe('api schema stub', () => {
   it('builds health replies that match the shared contract', () => {

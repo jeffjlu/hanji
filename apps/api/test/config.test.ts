@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { loadConfig, redactConfig } from './config.js';
+import { loadConfig, redactConfig } from '../src/config.js';
 import { ConfigError } from '@hanji/db';
 
 const valid = {

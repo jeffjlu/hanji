@@ -1,5 +1,5 @@
 import Fastify from 'fastify';
-import { errorHandler, HttpError, notFoundHandler } from './errors.js';
+import { errorHandler, HttpError, notFoundHandler } from '../src/errors.js';
 import { ZodError } from 'zod';
 import { describe, it, expect } from 'vitest';
 import { type ProblemDetails, type FieldProblem } from '@hanji/schemas';
