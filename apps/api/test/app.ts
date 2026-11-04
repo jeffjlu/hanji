@@ -24,23 +24,31 @@ export function buildTestConfig(env: Env = {}): Config {
 
 export async function createTestApp(options: { env?: Env } = {}): Promise<TestApp> {
   const testDb = await createTestDatabase();
-  const config = buildTestConfig({ DATABASE_URL: testDb.databaseURL, ...options.env });
+  try {
+    const config = buildTestConfig({ DATABASE_URL: testDb.databaseURL, ...options.env });
 
-  // The test database owns the pool, so the app gets a no-op close.
-  const app = await buildApp(config, {
-    db: testDb.db,
-    sql: testDb.sql,
-    close: async () => {},
-  });
+    // The test database owns the pool, so the app gets a no-op close.
+    const app = await buildApp(config, {
+      db: testDb.db,
+      sql: testDb.sql,
+      close: async () => {},
+    });
 
-  return {
-    app,
-    config,
-    db: testDb.db,
-    sql: testDb.sql,
-    dispose: async () => {
-      await app.close();
-      await testDb.dispose();
-    },
-  };
+    return {
+      app,
+      config,
+      db: testDb.db,
+      sql: testDb.sql,
+      dispose: async () => {
+        try {
+          await app.close();
+        } finally {
+          await testDb.dispose();
+        }
+      },
+    };
+  } catch (err) {
+    await testDb.dispose();
+    throw err;
+  }
 }
