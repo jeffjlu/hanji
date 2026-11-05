@@ -1,12 +1,4 @@
-import {
-  bigint,
-  check,
-  index,
-  pgTable,
-  text,
-  timestamp,
-  uuid,
-} from 'drizzle-orm/pg-core';
+import { bigint, check, index, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm/sql/sql';
 
 export const appUser = pgTable(
