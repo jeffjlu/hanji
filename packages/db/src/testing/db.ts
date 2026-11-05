@@ -72,12 +72,12 @@ export function resetTables(sql: Sql): Promise<void> {
       throw new Error(`Refusing to reset a non-test database: ${databaseName}`);
     }
 
-    const tables = await tx.unsafe<{ table_name: string }[]>(
-      `SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public'`
-    );
+    const tables = await tx<
+      { tablename: string }[]
+    >`SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public'`;
 
-    for (const { table_name } of tables) {
-      await tx.unsafe(`TRUNCATE TABLE "public"."${table_name}" RESTART IDENTITY CASCADE`);
+    for (const { tablename } of tables) {
+      await tx`TRUNCATE TABLE "public"."${tx(`public.${tablename}`)}" RESTART IDENTITY CASCADE`;
     }
   });
 }
