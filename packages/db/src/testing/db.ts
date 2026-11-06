@@ -16,7 +16,7 @@ const TEST_DB_NAME_PATTERN = /^test_[0-9a-f]{8}$/;
  * connection, runs migrations against it, and returns a `createDb` handle plus a
  * `dispose()` that closes the pool and drops the database (WITH (FORCE)).
  */
-export async function createTestDatabase() {
+export async function createTestDatabase({ migrate = true } = {}) {
   const adminDatabaseUrl = inject('adminDatabaseUrl');
 
   const admin = createDb(adminDatabaseUrl, { max: 1 });
@@ -52,11 +52,13 @@ export async function createTestDatabase() {
     }
   };
 
-  try {
-    await migrateDatabase(db);
-  } catch (err) {
-    await dispose();
-    throw err;
+  if (migrate) {
+    try {
+      await migrateDatabase(db);
+    } catch (err) {
+      await dispose();
+      throw err;
+    }
   }
 
   return { db, sql, databaseURL: databaseUrl.href, dispose };
@@ -70,12 +72,12 @@ export function resetTables(sql: Sql): Promise<void> {
       throw new Error(`Refusing to reset a non-test database: ${databaseName}`);
     }
 
-    const tables = await tx.unsafe<{ table_name: string }[]>(
-      `SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public'`
-    );
+    const tables = await tx<
+      { tablename: string }[]
+    >`SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public'`;
 
-    for (const { table_name } of tables) {
-      await tx.unsafe(`TRUNCATE TABLE "public"."${table_name}" RESTART IDENTITY CASCADE`);
+    for (const { tablename } of tables) {
+      await tx`TRUNCATE TABLE "public"."${tx(`public.${tablename}`)}" RESTART IDENTITY CASCADE`;
     }
   });
 }

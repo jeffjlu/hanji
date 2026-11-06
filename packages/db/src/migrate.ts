@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 const DEFAULT_FOLDER = fileURLToPath(new URL('../drizzle', import.meta.url));
 
 export async function migrateDatabase(database: Database, folder = DEFAULT_FOLDER): Promise<void> {
-  if (!existsSync(folder)) return;
+  if (!existsSync(folder)) throw new Error(`Migrations folder does not exist: ${folder}`);
   await migrate(database, { migrationsFolder: folder });
 }
 
