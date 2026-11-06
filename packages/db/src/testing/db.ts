@@ -16,7 +16,7 @@ const TEST_DB_NAME_PATTERN = /^test_[0-9a-f]{8}$/;
  * connection, runs migrations against it, and returns a `createDb` handle plus a
  * `dispose()` that closes the pool and drops the database (WITH (FORCE)).
  */
-export async function createTestDatabase(shouldMigrate = true) {
+export async function createTestDatabase({ migrate = true } = {}) {
   const adminDatabaseUrl = inject('adminDatabaseUrl');
 
   const admin = createDb(adminDatabaseUrl, { max: 1 });
@@ -52,7 +52,7 @@ export async function createTestDatabase(shouldMigrate = true) {
     }
   };
 
-  if (shouldMigrate) {
+  if (migrate) {
     try {
       await migrateDatabase(db);
     } catch (err) {
