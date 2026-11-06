@@ -64,20 +64,32 @@ export async function createTestDatabase({ migrate = true } = {}) {
   return { db, sql, databaseURL: databaseUrl.href, dispose };
 }
 
-export function resetTables(sql: Sql): Promise<void> {
-  return sql.begin(async (tx) => {
-    const rows = await tx<{ name: string }[]>`select current_database() as name`;
+export async function resetTables(sql: Sql): Promise<void> {
+  await sql.begin(async (tx) => {
+    const rows = await tx<{ name: string }[]>`
+      SELECT current_database() AS name
+    `;
+
     const databaseName = rows[0]?.name;
+
     if (!databaseName || !TEST_DB_NAME_PATTERN.test(databaseName)) {
       throw new Error(`Refusing to reset a non-test database: ${databaseName}`);
     }
 
-    const tables = await tx<
-      { tablename: string }[]
-    >`SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public'`;
+    const tables = await tx<{ tablename: string }[]>`
+      SELECT tablename
+      FROM pg_catalog.pg_tables
+      WHERE schemaname = 'public'
+    `;
 
     for (const { tablename } of tables) {
-      await tx`TRUNCATE TABLE "public"."${tx(`public.${tablename}`)}" RESTART IDENTITY CASCADE`;
+      await tx.unsafe(
+        `TRUNCATE TABLE "public".${quoteIdentifier(tablename)} RESTART IDENTITY CASCADE`
+      );
     }
   });
+}
+
+function quoteIdentifier(identifier: string): string {
+  return `"${identifier.replaceAll('"', '""')}"`;
 }
