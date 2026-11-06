@@ -5,10 +5,10 @@ import { type Deps } from './deps.js';
 import { apiRoutes } from './routes/index.js';
 import { errorHandler, notFoundHandler } from './errors.js';
 
-export async function buildApp(config: Config, deps: Deps) {
+export async function buildApp(deps: Deps) {
   const app = Fastify({
     logger:
-      config.NODE_ENV === 'development'
+      deps.config.NODE_ENV === 'development'
         ? {
             transport: {
               target: 'pino-pretty',

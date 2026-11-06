@@ -17,8 +17,8 @@ function loadConfigOrExit(): Config {
 }
 
 const config = loadConfigOrExit();
-const deps = createDb(config.DATABASE_URL);
-const app = await buildApp(config, deps);
+const deps = { ...createDb(config.DATABASE_URL), config: config, now: () => new Date() };
+const app = await buildApp(deps);
 
 app.log.info({ config: redactConfig(config) }, 'configuration loaded');
 

@@ -28,10 +28,11 @@ describe('GET /api/v1/health', () => {
 
     beforeAll(async () => {
       // Nothing listens on port 1, so every connection attempt fails.
-      app = await buildApp(
-        buildTestConfig(),
-        createDb('postgres://u:p@127.0.0.1:1/none', { connectTimeoutSeconds: 1 })
-      );
+      app = await buildApp({
+        ...createDb('postgres://u:p@127.0.0.1:1/none', { connectTimeoutSeconds: 1 }),
+        config: buildTestConfig(),
+        now: () => new Date(),
+      });
     });
     afterAll(async () => {
       await app.close();
