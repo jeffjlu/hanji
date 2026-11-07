@@ -7,33 +7,44 @@ import { findSessionsByUserId } from '@hanji/db/testing';
 
 const REGISTRATION_CODE = 'test-invite-code';
 const REGISTER_URL = '/api/v1/register';
-const TEST_EMAIL = 'newuser@example.com';
+const LOGIN_URL = '/api/v1/login';
+
+const REGISTER_EMAIL = 'register@example.com';
+const LOGIN_EMAIL = 'login@example.com';
 const TEST_PASSWORD = 'thisIsALongEnoughPassword';
 
 function registerPayload(
   overrides: Partial<{ email: string; password: string; inviteCode: string }> = {}
 ) {
   return {
-    email: TEST_EMAIL,
+    email: REGISTER_EMAIL,
     password: TEST_PASSWORD,
     inviteCode: REGISTRATION_CODE,
     ...overrides,
   };
 }
 
+function loginPayload(overrides: Partial<{ email: string; password: string }> = {}) {
+  return {
+    email: LOGIN_EMAIL,
+    password: TEST_PASSWORD,
+    ...overrides,
+  };
+}
+
+let testApp: Awaited<ReturnType<typeof createTestApp>>;
+
+beforeAll(async () => {
+  testApp = await createTestApp({
+    env: { REGISTRATION_CODE },
+  });
+});
+
+afterAll(async () => {
+  await testApp.dispose();
+});
+
 describe('POST /api/v1/register', () => {
-  let testApp: Awaited<ReturnType<typeof createTestApp>>;
-
-  beforeAll(async () => {
-    testApp = await createTestApp({
-      env: { REGISTRATION_CODE },
-    });
-  });
-
-  afterAll(async () => {
-    await testApp.dispose();
-  });
-
   it('registers a new user and returns 201 with user only (no password/hash)', async () => {
     const res = await testApp.app.inject({
       method: 'POST',
@@ -46,7 +57,7 @@ describe('POST /api/v1/register', () => {
     expect(body).toMatchObject({
       user: {
         id: expect.any(String),
-        email: TEST_EMAIL,
+        email: REGISTER_EMAIL,
       },
     });
 
@@ -66,7 +77,7 @@ describe('POST /api/v1/register', () => {
     expect(setCookie).toContain('SameSite=Lax');
 
     // Verify database
-    const user = await findUserByEmail(testApp.db, TEST_EMAIL);
+    const user = await findUserByEmail(testApp.db, REGISTER_EMAIL);
     expect(user).toBeDefined();
 
     const sessions = await findSessionsByUserId(testApp.db, user!.id);
@@ -140,5 +151,182 @@ describe('POST /api/v1/register', () => {
     expect(bodyText).not.toContain('password');
     expect(bodyText).not.toContain('hash');
     expect(bodyText).not.toContain(passwordHash);
+  });
+});
+
+describe('POST /api/v1/login', () => {
+  let userId: string;
+
+  beforeAll(async () => {
+    const passwordHash = await hashPassword(TEST_PASSWORD);
+    const result = await createUser(testApp.db, { email: LOGIN_EMAIL, passwordHash });
+
+    if (!result.success) throw new Error('Failed to create test user');
+
+    userId = result.user.id;
+  });
+
+  it('success: logs in a user with correct credentials', async () => {
+    const sessionsBefore = await findSessionsByUserId(testApp.db, userId);
+    const res = await testApp.app.inject({
+      method: 'POST',
+      url: LOGIN_URL,
+      payload: loginPayload(),
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body).toMatchObject({
+      user: {
+        id: userId,
+        email: LOGIN_EMAIL,
+      },
+    });
+
+    // Verify cookie
+    const setCookie = res.headers['set-cookie'];
+
+    expect(setCookie).toBeDefined();
+    expect(setCookie).toContain(SESSION_COOKIE_NAME);
+    expect(setCookie).toContain(`Max-Age=${SESSION_LIFETIME_DAYS * 60 * 60 * 24}`);
+    expect(setCookie).toContain('HttpOnly');
+    expect(setCookie).toContain('SameSite=Lax');
+    expect(setCookie).not.toContain('Secure');
+
+    const bodyText = JSON.stringify(body);
+    expect(bodyText).not.toContain('password');
+    expect(bodyText).not.toContain('hash');
+
+    const sessionsAfter = await findSessionsByUserId(testApp.db, userId);
+    expect(sessionsAfter).toHaveLength(sessionsBefore.length + 1);
+  });
+
+  it('invalid email: returns 400 for a malformed email address', async () => {
+    const res = await testApp.app.inject({
+      method: 'POST',
+      url: LOGIN_URL,
+      payload: loginPayload({ email: 'not-an-email' }),
+    });
+
+    expect(res.statusCode).toBe(400);
+    const body = res.json();
+    const bodyText = JSON.stringify(body);
+    expect(bodyText).not.toContain('hash');
+    expect(bodyText).not.toContain(TEST_PASSWORD);
+  });
+
+  it('returns 401 for an unknown email', async () => {
+    const sessionsBefore = await findSessionsByUserId(testApp.db, userId);
+
+    const email = 'unknown-email@example.com';
+
+    const res = await testApp.app.inject({
+      method: 'POST',
+      url: LOGIN_URL,
+      payload: loginPayload({ email }),
+    });
+
+    expect(res.statusCode).toBe(401);
+    const body = res.json();
+    const bodyText = JSON.stringify(body);
+    expect(bodyText).not.toContain('hash');
+
+    const sessionsAfter = await findSessionsByUserId(testApp.db, userId);
+    expect(sessionsBefore.length).toBe(sessionsAfter.length);
+  });
+
+  it('returns 401 for an incorrect password', async () => {
+    const sessionsBefore = await findSessionsByUserId(testApp.db, userId);
+
+    const res = await testApp.app.inject({
+      method: 'POST',
+      url: LOGIN_URL,
+      payload: loginPayload({ password: 'incorrect-password' }),
+    });
+
+    expect(res.statusCode).toBe(401);
+    const body = res.json();
+    const bodyText = JSON.stringify(body);
+    expect(bodyText).not.toContain('hash');
+
+    const sessionsAfter = await findSessionsByUserId(testApp.db, userId);
+    expect(sessionsBefore.length).toBe(sessionsAfter.length);
+  });
+
+  it('unknown email is not dramatically faster than an incorrect password', async () => {
+    const iterations = 6;
+    const unknownEmail = 'unknown-email@example.com';
+    const wrongPassword = 'incorrect-password';
+
+    // Warm up JIT / argon2 before measuring.
+    await testApp.app.inject({
+      method: 'POST',
+      url: LOGIN_URL,
+      payload: loginPayload({ email: unknownEmail }),
+    });
+    await testApp.app.inject({
+      method: 'POST',
+      url: LOGIN_URL,
+      payload: loginPayload({ password: wrongPassword }),
+    });
+
+    const unknownMs: number[] = [];
+    const incorrectMs: number[] = [];
+
+    for (let i = 0; i < iterations; i++) {
+      const unknownStart = process.hrtime.bigint();
+      await testApp.app.inject({
+        method: 'POST',
+        url: LOGIN_URL,
+        payload: loginPayload({ email: unknownEmail }),
+      });
+      unknownMs.push(Number(process.hrtime.bigint() - unknownStart) / 1_000_000);
+
+      const incorrectStart = process.hrtime.bigint();
+      await testApp.app.inject({
+        method: 'POST',
+        url: LOGIN_URL,
+        payload: loginPayload({ password: wrongPassword }),
+      });
+      incorrectMs.push(Number(process.hrtime.bigint() - incorrectStart) / 1_000_000);
+    }
+
+    const avgUnknown =
+      unknownMs.reduce((total, ms) => total + ms, 0) / unknownMs.length;
+    const avgIncorrect =
+      incorrectMs.reduce((total, ms) => total + ms, 0) / incorrectMs.length;
+
+    expect(avgUnknown).toBeGreaterThan(avgIncorrect * 0.5);
+  });
+
+  it('should set secure to true in production', async () => {
+    const prodApp = await createTestApp({ env: { NODE_ENV: 'production' } });
+    try {
+      const passwordHash = await hashPassword(TEST_PASSWORD);
+      const result = await createUser(prodApp.db, {
+        email: LOGIN_EMAIL,
+        passwordHash,
+      });
+
+      if (!result.success) throw new Error('Failed to create test user');
+
+      const res = await prodApp.app.inject({
+        method: 'POST',
+        url: LOGIN_URL,
+        payload: loginPayload(),
+      });
+
+      expect(res.statusCode).toBe(200);
+
+      const setCookie = res.headers['set-cookie'];
+
+      expect(setCookie).toBeDefined();
+      expect(setCookie).toContain(SESSION_COOKIE_NAME);
+      expect(setCookie).toContain('HttpOnly');
+      expect(setCookie).toContain('SameSite=Lax');
+      expect(setCookie).toContain('Secure');
+    } finally {
+      await prodApp.dispose();
+    }
   });
 });

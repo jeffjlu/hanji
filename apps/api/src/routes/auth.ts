@@ -1,13 +1,10 @@
 import { type FastifyInstance, type FastifyPluginAsync } from 'fastify';
-import { registerRequestSchema } from '@hanji/schemas';
+import { loginRequestSchema, registerRequestSchema } from '@hanji/schemas';
 import { type Deps } from '../deps.js';
 import { HttpError } from '../errors.js';
 import { safeCompare } from '../safe-compare.js';
-import { hashPassword } from '../auth/password.js';
-import {
-  createSession,
-  createUser,
-} from '@hanji/db';
+import { hashPassword, verifyPassword, verifyPasswordWithDummyHash } from '../auth/password.js';
+import { createSession, createUser, findUserByEmail } from '@hanji/db';
 import {
   generateToken,
   getSessionCookieOptions,
@@ -43,6 +40,33 @@ export function authRoutes(deps: Deps): FastifyPluginAsync {
       });
       reply.setCookie(SESSION_COOKIE_NAME, token, getSessionCookieOptions(deps.config.NODE_ENV));
       return reply.code(201).send({
+        user: {
+          id: user.id,
+          email: user.email,
+        },
+      });
+    });
+
+    app.post('/login', async (request, reply) => {
+      const { email, password } = loginRequestSchema.parse(request.body);
+
+      const user = await findUserByEmail(deps.db, email);
+      if (!user) {
+        await verifyPasswordWithDummyHash(password);
+        throw new HttpError(401, 'Invalid email or password');
+      }
+
+      const passwordValid = await verifyPassword(user.passwordHash, password);
+      if (!passwordValid) throw new HttpError(401, 'Invalid email or password');
+
+      const token = generateToken();
+      await createSession(deps.db, {
+        userId: user.id,
+        tokenHash: hashToken(token),
+        expiresAt: getSessionExpiry(deps.now()),
+      });
+      reply.setCookie(SESSION_COOKIE_NAME, token, getSessionCookieOptions(deps.config.NODE_ENV));
+      return reply.code(200).send({
         user: {
           id: user.id,
           email: user.email,
