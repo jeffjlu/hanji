@@ -1,6 +1,9 @@
 import { type FastifyInstance, type InjectOptions } from 'fastify';
+import { type RegisterRequest } from '@hanji/schemas';
 
 type InjectResponse = Awaited<ReturnType<FastifyInstance['inject']>>;
+
+const REGISTER_URL = '/api/v1/auth/register';
 
 export class TestClient {
   private cookies: Record<string, string> = {};
@@ -46,6 +49,27 @@ export class TestClient {
           this.cookies[name] = value;
         }
       }
+    }
+
+    return response;
+  }
+
+  /**
+   * Register a user and keep the session cookie that registration sets.
+   *
+   * Successful registration already creates a session and issues the session
+   * cookie, so no separate login request is needed. The returned client
+   * is ready to make authenticated requests.
+   */
+  async registerAndLogin(input: RegisterRequest): Promise<InjectResponse> {
+    const response = await this.request({
+      method: 'POST',
+      url: REGISTER_URL,
+      payload: input,
+    });
+
+    if (response.statusCode !== 201) {
+      throw new Error(`Registration failed: ${response.statusCode}`);
     }
 
     return response;

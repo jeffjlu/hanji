@@ -156,6 +156,51 @@ describe('POST /api/v1/auth/register', () => {
     expect(bodyText).not.toContain('hash');
     expect(bodyText).not.toContain(passwordHash);
   });
+
+  it('stores the password as an Argon2id hash', async () => {
+    const email = 'argon2id@example.com';
+
+    const res = await testApp.app.inject({
+      method: 'POST',
+      url: REGISTER_URL,
+      payload: registerPayload({ email }),
+    });
+
+    expect(res.statusCode).toBe(201);
+
+    const user = await findUserByEmail(testApp.db, email);
+    expect(user).toBeDefined();
+    expect(user!.passwordHash).toMatch(/^\$argon2id\$/);
+  });
+
+  it('sets a Secure session cookie in production', async () => {
+    const prodApp = await createTestApp({
+      env: { NODE_ENV: 'production', REGISTRATION_CODE },
+    });
+    try {
+      const email = 'production-register@example.com';
+
+      const res = await prodApp.app.inject({
+        method: 'POST',
+        url: REGISTER_URL,
+        payload: registerPayload({ email }),
+      });
+
+      expect(res.statusCode).toBe(201);
+
+      const setCookie = res.headers['set-cookie'];
+
+      expect(setCookie).toBeDefined();
+      expect(setCookie).toContain(SESSION_COOKIE_NAME);
+      expect(setCookie).toContain('HttpOnly');
+      expect(setCookie).toContain('SameSite=Lax');
+      expect(setCookie).toContain('Path=/');
+      expect(setCookie).toContain(`Max-Age=${SESSION_LIFETIME_DAYS * 60 * 60 * 24}`);
+      expect(setCookie).toContain('Secure');
+    } finally {
+      await prodApp.dispose();
+    }
+  });
 });
 
 describe('POST /api/v1/auth/login', () => {
