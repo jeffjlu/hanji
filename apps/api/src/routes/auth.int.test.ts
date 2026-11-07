@@ -1,10 +1,11 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { createTestApp } from '../../test/app.js';
 import { hashPassword } from '../auth/password.js';
 import { getSessionExpiry, hashToken } from '../auth/session.js';
 import { createSession, createUser, findUserByEmail } from '@hanji/db';
 import { SESSION_COOKIE_NAME, SESSION_LIFETIME_DAYS } from '../auth/session.js';
 import { findSessionCount, findSessionsByUserId } from '@hanji/db/testing';
+import { TestClient } from '../../test/test-client.js';
 
 const REGISTRATION_CODE = 'test-invite-code';
 const AUTH_PREFIX = '/api/v1/auth';
@@ -37,11 +38,16 @@ function loginPayload(overrides: Partial<{ email: string; password: string }> = 
 }
 
 let testApp: Awaited<ReturnType<typeof createTestApp>>;
+let testClient: TestClient;
 
 beforeAll(async () => {
   testApp = await createTestApp({
     env: { REGISTRATION_CODE },
   });
+});
+
+beforeEach(async () => {
+  testClient = new TestClient(testApp.app, testApp.config.WEB_ORIGIN);
 });
 
 afterAll(async () => {
@@ -50,7 +56,7 @@ afterAll(async () => {
 
 describe('POST /api/v1/auth/register', () => {
   it('registers a new user and returns 201 with user only (no password/hash)', async () => {
-    const res = await testApp.app.inject({
+    const res = await testClient.request({
       method: 'POST',
       url: REGISTER_URL,
       payload: registerPayload(),
@@ -91,7 +97,7 @@ describe('POST /api/v1/auth/register', () => {
   });
 
   it('returns 403 for an invalid registration code', async () => {
-    const res = await testApp.app.inject({
+    const res = await testClient.request({
       method: 'POST',
       url: REGISTER_URL,
       payload: registerPayload({ inviteCode: 'wrong-code' }),
@@ -106,7 +112,7 @@ describe('POST /api/v1/auth/register', () => {
   });
 
   it('returns 400 for a malformed email address', async () => {
-    const res = await testApp.app.inject({
+    const res = await testClient.request({
       method: 'POST',
       url: REGISTER_URL,
       payload: registerPayload({ email: 'not-an-email' }),
@@ -122,7 +128,7 @@ describe('POST /api/v1/auth/register', () => {
 
   it('returns 400 for a password below the minimum length', async () => {
     const shortPassword = 'short';
-    const res = await testApp.app.inject({
+    const res = await testClient.request({
       method: 'POST',
       url: REGISTER_URL,
       payload: registerPayload({ password: shortPassword }),
@@ -143,7 +149,7 @@ describe('POST /api/v1/auth/register', () => {
     // Pre-create a user in the database
     await createUser(testApp.db, { email, passwordHash });
 
-    const res = await testApp.app.inject({
+    const res = await testClient.request({
       method: 'POST',
       url: REGISTER_URL,
       payload: registerPayload({ email }),
@@ -160,7 +166,7 @@ describe('POST /api/v1/auth/register', () => {
   it('stores the password as an Argon2id hash', async () => {
     const email = 'argon2id@example.com';
 
-    const res = await testApp.app.inject({
+    const res = await testClient.request({
       method: 'POST',
       url: REGISTER_URL,
       payload: registerPayload({ email }),
@@ -217,7 +223,7 @@ describe('POST /api/v1/auth/login', () => {
 
   it('success: logs in a user with correct credentials', async () => {
     const sessionsBefore = await findSessionsByUserId(testApp.db, userId);
-    const res = await testApp.app.inject({
+    const res = await testClient.request({
       method: 'POST',
       url: LOGIN_URL,
       payload: loginPayload(),
@@ -251,7 +257,7 @@ describe('POST /api/v1/auth/login', () => {
   });
 
   it('invalid email: returns 400 for a malformed email address', async () => {
-    const res = await testApp.app.inject({
+    const res = await testClient.request({
       method: 'POST',
       url: LOGIN_URL,
       payload: loginPayload({ email: 'not-an-email' }),
@@ -269,7 +275,7 @@ describe('POST /api/v1/auth/login', () => {
 
     const email = 'unknown-email@example.com';
 
-    const res = await testApp.app.inject({
+    const res = await testClient.request({
       method: 'POST',
       url: LOGIN_URL,
       payload: loginPayload({ email }),
@@ -287,7 +293,7 @@ describe('POST /api/v1/auth/login', () => {
   it('returns 401 for an incorrect password', async () => {
     const sessionsBefore = await findSessionsByUserId(testApp.db, userId);
 
-    const res = await testApp.app.inject({
+    const res = await testClient.request({
       method: 'POST',
       url: LOGIN_URL,
       payload: loginPayload({ password: 'incorrect-password' }),
@@ -308,12 +314,12 @@ describe('POST /api/v1/auth/login', () => {
     const wrongPassword = 'incorrect-password';
 
     // Warm up JIT / argon2 before measuring.
-    await testApp.app.inject({
+    await testClient.request({
       method: 'POST',
       url: LOGIN_URL,
       payload: loginPayload({ email: unknownEmail }),
     });
-    await testApp.app.inject({
+    await testClient.request({
       method: 'POST',
       url: LOGIN_URL,
       payload: loginPayload({ password: wrongPassword }),
@@ -324,7 +330,7 @@ describe('POST /api/v1/auth/login', () => {
 
     for (let i = 0; i < iterations; i++) {
       const unknownStart = process.hrtime.bigint();
-      await testApp.app.inject({
+      await testClient.request({
         method: 'POST',
         url: LOGIN_URL,
         payload: loginPayload({ email: unknownEmail }),
@@ -332,7 +338,7 @@ describe('POST /api/v1/auth/login', () => {
       unknownMs.push(Number(process.hrtime.bigint() - unknownStart) / 1_000_000);
 
       const incorrectStart = process.hrtime.bigint();
-      await testApp.app.inject({
+      await testClient.request({
         method: 'POST',
         url: LOGIN_URL,
         payload: loginPayload({ password: wrongPassword }),
@@ -400,7 +406,7 @@ describe('POST /api/v1/auth/logout', () => {
     });
     if (!session) throw new Error('expected session creation to succeed');
     const sessionsBefore = await findSessionsByUserId(testApp.db, userId);
-    const res = await testApp.app.inject({
+    const res = await testClient.request({
       method: 'POST',
       url: LOGOUT_URL,
       cookies: {
@@ -427,7 +433,7 @@ describe('POST /api/v1/auth/logout', () => {
   it('should succeed quietly without a session', async () => {
     const token = 'there-is-no-session-with-this-token';
     const sessionsBefore = await findSessionCount(testApp.db);
-    const res = await testApp.app.inject({
+    const res = await testClient.request({
       method: 'POST',
       url: LOGOUT_URL,
       cookies: {

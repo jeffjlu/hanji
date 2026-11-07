@@ -19,7 +19,7 @@ describe('authentication flow', () => {
     testApp = await createTestApp({
       env: { REGISTRATION_CODE },
     });
-    testClient = new TestClient(testApp.app);
+    testClient = new TestClient(testApp.app, testApp.config.WEB_ORIGIN);
   });
 
   afterAll(async () => {

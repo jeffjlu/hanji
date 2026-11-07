@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { TestClient } from '../../test/test-client.js';
 import { createTestApp } from '../../test/app.js';
 import { createSession, createUser, extendSession, findUserByEmail, type schema } from '@hanji/db';
@@ -15,6 +15,7 @@ const REGISTRATION_CODE = 'test-invite-code';
 describe('GET /api/v1/me', () => {
   let testApp: Awaited<ReturnType<typeof createTestApp>>;
   let user: schema.User;
+  let testClient: TestClient;
 
   beforeAll(async () => {
     testApp = await createTestApp();
@@ -22,6 +23,10 @@ describe('GET /api/v1/me', () => {
     const createUserResult = await createUser(testApp.db, { email: ME_EMAIL, passwordHash });
     if (!createUserResult.success) throw new Error('expected user creation to succeed');
     user = createUserResult.user;
+  });
+
+  beforeEach(async () => {
+    testClient = new TestClient(testApp.app, testApp.config.WEB_ORIGIN);
   });
 
   afterAll(async () => {
@@ -39,7 +44,7 @@ describe('GET /api/v1/me', () => {
     });
     if (!session) throw new Error('expected session creation to succeed');
 
-    const res = await testApp.app.inject({
+    const res = await testClient.request({
       method: 'GET',
       url: ME_URL,
       cookies: {
@@ -61,7 +66,7 @@ describe('GET /api/v1/me', () => {
   });
 
   it('should return 401 for a request without a token cookie', async () => {
-    const res = await testApp.app.inject({
+    const res = await testClient.request({
       method: 'GET',
       url: ME_URL,
     });
@@ -71,7 +76,7 @@ describe('GET /api/v1/me', () => {
   it('should return 401 for an invalid token', async () => {
     const token = 'this-token-does-not-exist';
 
-    const res = await testApp.app.inject({
+    const res = await testClient.request({
       method: 'GET',
       url: ME_URL,
       cookies: {
@@ -92,7 +97,7 @@ describe('GET /api/v1/me', () => {
     });
     if (!session) throw new Error('expected session creation to succeed');
 
-    const res = await testApp.app.inject({
+    const res = await testClient.request({
       method: 'GET',
       url: ME_URL,
       cookies: {
@@ -103,7 +108,6 @@ describe('GET /api/v1/me', () => {
   });
 
   it('should return 401 when a session expires after registration', async () => {
-    const testClient = new TestClient(testApp.app);
     const email = 'session-expiry@example.com';
 
     // Registration creates a session and sets the session cookie.

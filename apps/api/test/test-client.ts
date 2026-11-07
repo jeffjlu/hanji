@@ -2,28 +2,59 @@ import { type FastifyInstance, type InjectOptions } from 'fastify';
 import { type RegisterRequest } from '@hanji/schemas';
 
 type InjectResponse = Awaited<ReturnType<FastifyInstance['inject']>>;
+type TestClientRequestOptions = InjectOptions & {
+  /**
+   * Overrides the default Origin header.
+   * Use null to omit the header entirely.
+   */
+  origin?: string | null;
+};
 
 const REGISTER_URL = '/api/v1/auth/register';
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 export class TestClient {
   private cookies: Record<string, string> = {};
 
-  constructor(private app: FastifyInstance) {}
+  constructor(
+    private app: FastifyInstance,
+    private webOrigin: string
+  ) {}
 
-  async request(options: InjectOptions): Promise<InjectResponse> {
+  async request(options: TestClientRequestOptions): Promise<InjectResponse> {
+    const { origin, ...injectOptions } = options;
+    const method = (injectOptions.method ?? 'GET').toUpperCase();
+
+    const headers: NonNullable<InjectOptions['headers']> = {
+      ...injectOptions.headers,
+    };
+
+    const hasHeader = (name: string) =>
+      Object.keys(headers).some((key) => key.toLowerCase() === name);
+
+    if (hasHeader('origin')) {
+      throw new Error('Specify Origin using the "origin" option, not headers.');
+    }
+
+    if (hasHeader('cookie')) {
+      throw new Error('TestClient manages cookies automatically; do not supply a cookie header.');
+    }
+
+    if (!SAFE_METHODS.has(method) || origin !== undefined) {
+      if (origin !== null) {
+        headers['origin'] = origin ?? this.webOrigin;
+      }
+    }
+
+    if (Object.keys(this.cookies).length > 0) {
+      headers['cookie'] = Object.entries(this.cookies)
+        .map(([name, value]) => `${name}=${value}`)
+        .join('; ');
+    }
+
     const response = await this.app.inject({
-      ...options,
-      headers: {
-        ...options.headers,
-        ...(Object.keys(this.cookies).length > 0
-          ? {
-              cookie: Object.entries(this.cookies)
-                .map(([name, value]) => `${name}=${value}`)
-                .join('; '),
-            }
-          : {}),
-      },
-      payload: options.payload,
+      ...injectOptions,
+      headers,
     });
 
     const setCookieHeader = response.headers['set-cookie'];
