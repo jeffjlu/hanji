@@ -10,6 +10,7 @@ export async function buildApp(deps: Deps) {
     logger:
       deps.config.NODE_ENV === 'development'
         ? {
+            level: 'debug',
             transport: {
               target: 'pino-pretty',
               options: {
