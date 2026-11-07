@@ -3,6 +3,7 @@ import { type Deps } from '../deps.js';
 import { type FastifyPluginAsync, type FastifyInstance } from 'fastify';
 import { requireAuth } from '../auth/require-auth.js';
 import { authRoutes } from './auth.js';
+import { meRoute } from './me.js';
 
 export function apiRoutes(deps: Deps): FastifyPluginAsync {
   return async (app: FastifyInstance) => {
@@ -14,6 +15,7 @@ export function apiRoutes(deps: Deps): FastifyPluginAsync {
     // Protected routes
     await app.register(async (protectedScope) => {
       protectedScope.addHook('onRequest', requireAuth(deps));
+      await protectedScope.register(meRoute());
       // TODO: add rest of routes
     });
   };
