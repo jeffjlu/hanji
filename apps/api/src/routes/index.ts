@@ -8,7 +8,7 @@ export function apiRoutes(deps: Deps): FastifyPluginAsync {
   return async (app: FastifyInstance) => {
     // Public routes
     await app.register(healthRoutes(deps.sql));
-    await app.register(authRoutes(deps));
+    await app.register(authRoutes(deps), { prefix: '/auth' });
     // TODO: add rest of routes
 
     // Protected routes

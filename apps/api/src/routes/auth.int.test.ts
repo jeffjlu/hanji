@@ -6,8 +6,8 @@ import { SESSION_COOKIE_NAME, SESSION_LIFETIME_DAYS } from '../auth/session.js';
 import { findSessionsByUserId } from '@hanji/db/testing';
 
 const REGISTRATION_CODE = 'test-invite-code';
-const REGISTER_URL = '/api/v1/register';
-const LOGIN_URL = '/api/v1/login';
+const REGISTER_URL = '/api/v1/auth/register';
+const LOGIN_URL = '/api/v1/auth/login';
 
 const REGISTER_EMAIL = 'register@example.com';
 const LOGIN_EMAIL = 'login@example.com';
@@ -44,7 +44,7 @@ afterAll(async () => {
   await testApp.dispose();
 });
 
-describe('POST /api/v1/register', () => {
+describe('POST /api/v1/auth/register', () => {
   it('registers a new user and returns 201 with user only (no password/hash)', async () => {
     const res = await testApp.app.inject({
       method: 'POST',
@@ -154,7 +154,7 @@ describe('POST /api/v1/register', () => {
   });
 });
 
-describe('POST /api/v1/login', () => {
+describe('POST /api/v1/auth/login', () => {
   let userId: string;
 
   beforeAll(async () => {
