@@ -93,11 +93,17 @@ export async function extendSession(
 }
 
 /**
- * Deletes the session with the given id.
- * Returns the deleted session, or undefined if no session exists with the id.
+ * Deletes the session with the given token hash.
+ * Returns the deleted session, or undefined if no session exists with the token hash.
  */
-export async function deleteSession(executor: Executor, id: string): Promise<Session | undefined> {
-  const [deleted] = await executor.delete(session).where(eq(session.id, id)).returning();
+export async function deleteSession(
+  executor: Executor,
+  tokenHash: string
+): Promise<Session | undefined> {
+  const [deleted] = await executor
+    .delete(session)
+    .where(eq(session.tokenHash, tokenHash))
+    .returning();
 
   return deleted;
 }

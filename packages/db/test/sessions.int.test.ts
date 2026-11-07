@@ -172,17 +172,18 @@ describe('extendSession', () => {
 describe('deleteSession', () => {
   it('should delete the session when it exists', async () => {
     const user = await createTestUser(db);
+    const tokenHash = 'token-to-delete';
     const createdSession = await createSession(db, {
       userId: user.id,
-      tokenHash: 'token-to-delete',
+      tokenHash,
       expiresAt: new Date(Date.now() + 1000 * 60 * 60),
     });
 
-    const deleted = await deleteSession(db, createdSession.id);
+    const deleted = await deleteSession(db, tokenHash);
     expect(deleted).toBeDefined();
     expect(deleted?.id).toBe(createdSession.id);
 
-    const result = await findSessionByTokenHash(db, 'token-to-delete');
+    const result = await findSessionByTokenHash(db, tokenHash);
     expect(result).toBeUndefined();
   });
 
