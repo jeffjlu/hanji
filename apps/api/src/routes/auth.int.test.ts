@@ -1,16 +1,20 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createTestApp } from '../../test/app.js';
 import { hashPassword } from '../auth/password.js';
-import { createUser, findUserByEmail } from '@hanji/db';
+import { getSessionExpiry, hashToken } from '../auth/session.js';
+import { createSession, createUser, findUserByEmail } from '@hanji/db';
 import { SESSION_COOKIE_NAME, SESSION_LIFETIME_DAYS } from '../auth/session.js';
-import { findSessionsByUserId } from '@hanji/db/testing';
+import { findSessionCount, findSessionsByUserId } from '@hanji/db/testing';
 
 const REGISTRATION_CODE = 'test-invite-code';
-const REGISTER_URL = '/api/v1/auth/register';
-const LOGIN_URL = '/api/v1/auth/login';
+const AUTH_PREFIX = '/api/v1/auth';
+const REGISTER_URL = `${AUTH_PREFIX}/register`;
+const LOGIN_URL = `${AUTH_PREFIX}/login`;
+const LOGOUT_URL = `${AUTH_PREFIX}/logout`;
 
 const REGISTER_EMAIL = 'register@example.com';
 const LOGIN_EMAIL = 'login@example.com';
+const LOGOUT_EMAIL = 'logout@example.com';
 const TEST_PASSWORD = 'thisIsALongEnoughPassword';
 
 function registerPayload(
@@ -291,10 +295,8 @@ describe('POST /api/v1/auth/login', () => {
       incorrectMs.push(Number(process.hrtime.bigint() - incorrectStart) / 1_000_000);
     }
 
-    const avgUnknown =
-      unknownMs.reduce((total, ms) => total + ms, 0) / unknownMs.length;
-    const avgIncorrect =
-      incorrectMs.reduce((total, ms) => total + ms, 0) / incorrectMs.length;
+    const avgUnknown = unknownMs.reduce((total, ms) => total + ms, 0) / unknownMs.length;
+    const avgIncorrect = incorrectMs.reduce((total, ms) => total + ms, 0) / incorrectMs.length;
 
     expect(avgUnknown).toBeGreaterThan(avgIncorrect * 0.5);
   });
@@ -328,5 +330,79 @@ describe('POST /api/v1/auth/login', () => {
     } finally {
       await prodApp.dispose();
     }
+  });
+});
+
+describe('POST /api/v1/auth/logout', () => {
+  let userId: string;
+
+  beforeAll(async () => {
+    const passwordHash = await hashPassword(TEST_PASSWORD);
+    const result = await createUser(testApp.db, { email: LOGOUT_EMAIL, passwordHash });
+
+    if (!result.success) throw new Error('Failed to create test user');
+
+    userId = result.user.id;
+  });
+
+  it('should successfully log a user out', async () => {
+    const token = 'logout-token';
+    const tokenHash = hashToken(token);
+    const session = await createSession(testApp.db, {
+      userId,
+      tokenHash,
+      expiresAt: getSessionExpiry(new Date()),
+    });
+    if (!session) throw new Error('expected session creation to succeed');
+    const sessionsBefore = await findSessionsByUserId(testApp.db, userId);
+    const res = await testApp.app.inject({
+      method: 'POST',
+      url: LOGOUT_URL,
+      cookies: {
+        [SESSION_COOKIE_NAME]: token,
+      },
+    });
+
+    expect(res.statusCode).toBe(204);
+    expect(res.body).toBe('');
+
+    // Verify session was deleted
+    const sessionsAfter = await findSessionsByUserId(testApp.db, userId);
+    expect(sessionsAfter.length).toBe(sessionsBefore.length - 1);
+
+    // Verify cookie was cleared
+    const setCookie = res.headers['set-cookie'];
+    expect(setCookie).toBeDefined();
+    expect(setCookie).toContain(SESSION_COOKIE_NAME);
+    expect(setCookie).toContain('Max-Age=0');
+    expect(setCookie).toContain('HttpOnly');
+    expect(setCookie).toContain('SameSite=Lax');
+  });
+
+  it('should succeed quietly without a session', async () => {
+    const token = 'there-is-no-session-with-this-token';
+    const sessionsBefore = await findSessionCount(testApp.db);
+    const res = await testApp.app.inject({
+      method: 'POST',
+      url: LOGOUT_URL,
+      cookies: {
+        [SESSION_COOKIE_NAME]: token,
+      },
+    });
+
+    expect(res.statusCode).toBe(204);
+    expect(res.body).toBe('');
+
+    // Verify no sessions were affected
+    const sessionsAfter = await findSessionCount(testApp.db);
+    expect(sessionsAfter).toBe(sessionsBefore);
+
+    // Verify cookie was cleared
+    const setCookie = res.headers['set-cookie'];
+    expect(setCookie).toBeDefined();
+    expect(setCookie).toContain(SESSION_COOKIE_NAME);
+    expect(setCookie).toContain('Max-Age=0');
+    expect(setCookie).toContain('HttpOnly');
+    expect(setCookie).toContain('SameSite=Lax');
   });
 });

@@ -4,7 +4,7 @@ import { type Deps } from '../deps.js';
 import { HttpError } from '../errors.js';
 import { safeCompare } from '../safe-compare.js';
 import { hashPassword, verifyPassword, verifyPasswordWithDummyHash } from '../auth/password.js';
-import { createSession, createUser, findUserByEmail } from '@hanji/db';
+import { createSession, createUser, deleteSession, findUserByEmail } from '@hanji/db';
 import {
   generateToken,
   getSessionCookieOptions,
@@ -72,6 +72,15 @@ export function authRoutes(deps: Deps): FastifyPluginAsync {
           email: user.email,
         },
       });
+    });
+
+    app.post('/logout', async (request, reply) => {
+      const token = request.cookies[SESSION_COOKIE_NAME];
+      if (token) {
+        await deleteSession(deps.db, hashToken(token));
+      }
+      reply.clearCookie(SESSION_COOKIE_NAME, getSessionCookieOptions(deps.config.NODE_ENV));
+      return reply.code(204).send();
     });
   };
 }
