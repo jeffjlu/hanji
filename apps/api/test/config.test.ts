@@ -9,6 +9,8 @@ const valid = {
   REGISTRATION_CODE: 'invite-code-1',
   NODE_ENV: 'test',
   PORT: '3000',
+  RATE_LIMIT_MAX: '10',
+  RATE_LIMIT_WINDOW_SECONDS: '60',
 };
 
 function messageFor(env: Record<string, string | undefined>): string {
@@ -29,6 +31,21 @@ describe('loadConfig', () => {
   it('defaults NODE_ENV to development', () => {
     const { NODE_ENV: _omitted, ...rest } = valid;
     expect(loadConfig(rest).NODE_ENV).toBe('development');
+  });
+
+  it('defaults PORT to 3000', () => {
+    const { PORT: _omitted, ...rest } = valid;
+    expect(loadConfig(rest).PORT).toBe(3000);
+  });
+
+  it('defaults RATE_LIMIT_MAX to 10', () => {
+    const { RATE_LIMIT_MAX: _omitted, ...rest } = valid;
+    expect(loadConfig(rest).RATE_LIMIT_MAX).toBe(10);
+  });
+
+  it('defaults RATE_LIMIT_WINDOW_SECONDS to 60', () => {
+    const { RATE_LIMIT_WINDOW_SECONDS: _omitted, ...rest } = valid;
+    expect(loadConfig(rest).RATE_LIMIT_WINDOW_SECONDS).toBe(60);
   });
 
   it.each(['DATABASE_URL', 'SESSION_SECRET', 'WEB_ORIGIN', 'REGISTRATION_CODE'])(
@@ -52,6 +69,14 @@ describe('loadConfig', () => {
     ['WEB_ORIGIN', 'http://localhost:5173/'],
     ['REGISTRATION_CODE', 'short'],
     ['NODE_ENV', 'staging'],
+    ['RATE_LIMIT_MAX', '0'],
+    ['RATE_LIMIT_MAX', '-1'],
+    ['RATE_LIMIT_MAX', 'abcdefg'],
+    ['RATE_LIMIT_MAX', '5.1'],
+    ['RATE_LIMIT_WINDOW_SECONDS', '0'],
+    ['RATE_LIMIT_WINDOW_SECONDS', '-1'],
+    ['RATE_LIMIT_WINDOW_SECONDS', 'abcdefg'],
+    ['RATE_LIMIT_WINDOW_SECONDS', '5.1'],
   ])('names %s when the value %j is malformed', (name, value) => {
     expect(messageFor({ ...valid, [name]: value })).toContain(name);
   });
