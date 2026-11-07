@@ -22,16 +22,20 @@ export function buildTestConfig(env: Env = {}): Config {
   });
 }
 
-export async function createTestApp(options: { env?: Env } = {}): Promise<TestApp> {
+export async function createTestApp(
+  options: { env?: Env; now?: () => Date } = {}
+): Promise<TestApp> {
   const testDb = await createTestDatabase();
   try {
     const config = buildTestConfig({ DATABASE_URL: testDb.databaseURL, ...options.env });
 
     // The test database owns the pool, so the app gets a no-op close.
-    const app = await buildApp(config, {
+    const app = await buildApp({
       db: testDb.db,
       sql: testDb.sql,
       close: async () => {},
+      config: config,
+      now: options.now ?? (() => new Date()),
     });
 
     return {
