@@ -4,7 +4,7 @@ import { requireAuth } from '../src/auth/require-auth.js';
 import { findSessionByTokenHash, extendSession, type DbHandle } from '@hanji/db';
 import { buildTestConfig } from './app.js';
 import { type Config } from '../src/config.js';
-import { hashToken, SESSION_LIFETIME_DAYS } from '../src/auth/session.js';
+import { hashToken, SESSION_COOKIE_NAME, SESSION_LIFETIME_DAYS } from '../src/auth/session.js';
 import { type FastifyCookieOptions } from '@fastify/cookie';
 
 vi.mock('@hanji/db', async (importOriginal) => {
@@ -138,7 +138,7 @@ describe('requireAuth', () => {
     );
     expect(reply.cookies).toHaveLength(1);
     expect(reply.cookies[0]).toMatchObject({
-      name: 'token',
+      name: SESSION_COOKIE_NAME,
       value: 'some-token',
       options: {
         httpOnly: true,

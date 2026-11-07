@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   generateToken,
-  getSessionCookieOptions,
+  getSessionCookieBaseOptions,
   getSessionExpiry,
   hashToken,
   SESSION_EXTENSION_THRESHOLD_DAYS,
@@ -110,7 +110,7 @@ describe('shouldExtendSession', () => {
 describe('getSessionCookieOptions', () => {
   it('sets httpOnly, sameSite=lax, path=/ in every environment', () => {
     for (const nodeEnv of ['development', 'test', 'production']) {
-      const options = getSessionCookieOptions(nodeEnv);
+      const options = getSessionCookieBaseOptions(nodeEnv);
       expect(options.httpOnly).toBe(true);
       expect(options.sameSite).toBe('lax');
       expect(options.path).toBe('/');
@@ -118,11 +118,11 @@ describe('getSessionCookieOptions', () => {
   });
 
   it('sets secure=true in production', () => {
-    expect(getSessionCookieOptions('production').secure).toBe(true);
+    expect(getSessionCookieBaseOptions('production').secure).toBe(true);
   });
 
   it('sets secure=false in non-production environments', () => {
-    expect(getSessionCookieOptions('development').secure).toBe(false);
-    expect(getSessionCookieOptions('test').secure).toBe(false);
+    expect(getSessionCookieBaseOptions('development').secure).toBe(false);
+    expect(getSessionCookieBaseOptions('test').secure).toBe(false);
   });
 });
