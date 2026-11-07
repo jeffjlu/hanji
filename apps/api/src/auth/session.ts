@@ -47,6 +47,6 @@ export function getSessionCookieBaseOptions(nodeEnv: string): SessionCookieOptio
 export function getSessionCookieOptions(nodeEnv: Config['NODE_ENV']) {
   return {
     ...getSessionCookieBaseOptions(nodeEnv),
-    maxAge: daysToMs(SESSION_LIFETIME_DAYS),
+    maxAge: SESSION_LIFETIME_DAYS * 60 * 60 * 24,
   };
 }

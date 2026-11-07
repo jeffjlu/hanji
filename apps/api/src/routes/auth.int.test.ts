@@ -61,7 +61,7 @@ describe('POST /api/v1/register', () => {
 
     expect(setCookie).toBeDefined();
     expect(setCookie).toContain(SESSION_COOKIE_NAME);
-    expect(setCookie).toContain(`Max-Age=${SESSION_LIFETIME_DAYS * 60 * 60 * 24 * 1000}`);
+    expect(setCookie).toContain(`Max-Age=${SESSION_LIFETIME_DAYS * 60 * 60 * 24}`);
     expect(setCookie).toContain('HttpOnly');
     expect(setCookie).toContain('SameSite=Lax');
 

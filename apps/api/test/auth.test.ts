@@ -145,7 +145,7 @@ describe('requireAuth', () => {
         sameSite: 'lax',
         path: '/',
         secure: false,
-        maxAge: SESSION_LIFETIME_DAYS * 24 * 60 * 60 * 1000,
+        maxAge: SESSION_LIFETIME_DAYS * 24 * 60 * 60,
       },
     });
   });
