@@ -183,10 +183,11 @@ describe('POST /api/v1/auth/register', () => {
     const prodApp = await createTestApp({
       env: { NODE_ENV: 'production', REGISTRATION_CODE },
     });
+    const prodClient = new TestClient(prodApp.app, prodApp.config.WEB_ORIGIN);
     try {
       const email = 'production-register@example.com';
 
-      const res = await prodApp.app.inject({
+      const res = await prodClient.request({
         method: 'POST',
         url: REGISTER_URL,
         payload: registerPayload({ email }),
@@ -354,6 +355,7 @@ describe('POST /api/v1/auth/login', () => {
 
   it('should set secure to true in production', async () => {
     const prodApp = await createTestApp({ env: { NODE_ENV: 'production' } });
+    const prodClient = new TestClient(prodApp.app, prodApp.config.WEB_ORIGIN);
     try {
       const passwordHash = await hashPassword(TEST_PASSWORD);
       const result = await createUser(prodApp.db, {
@@ -363,7 +365,7 @@ describe('POST /api/v1/auth/login', () => {
 
       if (!result.success) throw new Error('Failed to create test user');
 
-      const res = await prodApp.app.inject({
+      const res = await prodClient.request({
         method: 'POST',
         url: LOGIN_URL,
         payload: loginPayload(),

@@ -4,6 +4,7 @@ import cookie from '@fastify/cookie';
 import { type Deps } from './deps.js';
 import { apiRoutes } from './routes/index.js';
 import { errorHandler, notFoundHandler } from './errors.js';
+import { originHook } from './auth/origin-hook.js';
 
 export async function buildApp(deps: Deps) {
   const app = Fastify({
@@ -30,6 +31,8 @@ export async function buildApp(deps: Deps) {
   await app.register(cookie, {
     hook: 'onRequest',
   });
+
+  app.addHook('onRequest', originHook(deps.config.WEB_ORIGIN));
 
   await app.register(apiRoutes(deps), { prefix: '/api/v1' });
 
