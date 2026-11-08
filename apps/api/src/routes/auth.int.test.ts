@@ -459,3 +459,77 @@ describe('POST /api/v1/auth/logout', () => {
     expect(setCookie).toContain('SameSite=Lax');
   });
 });
+
+describe('Rate limiting', () => {
+  it('limits POST /auth/login with the default route opt-in', async () => {
+    // RATE_LIMIT_MAX is lowered from the default only to keep this test fast
+    // and deterministic; the plugin registration and route opt-in are unchanged.
+    const app = await createTestApp({
+      env: {
+        REGISTRATION_CODE,
+        RATE_LIMIT_MAX: '3',
+        RATE_LIMIT_WINDOW_SECONDS: '60',
+      },
+    });
+    try {
+      const passwordHash = await hashPassword(TEST_PASSWORD);
+      const result = await createUser(app.db, {
+        email: LOGIN_EMAIL,
+        passwordHash,
+      });
+      if (!result.success) throw new Error('Failed to create test user');
+
+      const client = new TestClient(app.app, app.config.WEB_ORIGIN);
+
+      // The first 3 login attempts are allowed.
+      for (let i = 0; i < 3; i++) {
+        const res = await client.request({
+          method: 'POST',
+          url: LOGIN_URL,
+          payload: loginPayload(),
+        });
+        expect(res.statusCode).toBe(200);
+      }
+
+      // The 4th attempt is rate limited with a problem+json body.
+      const res = await client.request({
+        method: 'POST',
+        url: LOGIN_URL,
+        payload: loginPayload(),
+      });
+      expect(res.statusCode).toBe(429);
+      expect(res.headers['content-type']).toContain('application/problem+json');
+      const body = res.json();
+      expect(body.status).toBe(429);
+    } finally {
+      await app.dispose();
+    }
+  });
+
+  it('does not limit GET /health or GET /me (no global limit)', async () => {
+    const app = await createTestApp({
+      env: {
+        REGISTRATION_CODE,
+        RATE_LIMIT_MAX: '3',
+        RATE_LIMIT_WINDOW_SECONDS: '60',
+      },
+    });
+    try {
+      const client = new TestClient(app.app, app.config.WEB_ORIGIN);
+
+      // /health is public and never rate limited
+      for (let i = 0; i < 5; i++) {
+        const res = await client.request({ method: 'GET', url: '/api/v1/health' });
+        expect(res.statusCode).toBe(200);
+      }
+
+      // /me is protected but never rate limited
+      for (let i = 0; i < 5; i++) {
+        const res = await client.request({ method: 'GET', url: '/api/v1/me' });
+        expect(res.statusCode).not.toBe(429);
+      }
+    } finally {
+      await app.dispose();
+    }
+  });
+});
