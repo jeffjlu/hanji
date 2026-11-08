@@ -1,9 +1,19 @@
-import { Button } from '@/components/ui/button';
+import { Route, Routes } from 'react-router';
+
+import HomePage from '@/pages/Home';
+import LoginPage from '@/pages/Login';
+import RegisterPage from '@/pages/Register';
+import AppPage from '@/pages/App';
+import NotFoundPage from '@/pages/NotFound';
 
 export default function App() {
   return (
-    <main className="flex min-h-screen items-center justify-center">
-      <Button>Hanji</Button>
-    </main>
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/app" element={<AppPage />} />
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
   );
 }
