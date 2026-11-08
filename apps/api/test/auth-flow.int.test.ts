@@ -4,7 +4,6 @@ import { createTestApp } from './app.js';
 
 const REGISTRATION_CODE = 'test-invite-code';
 const AUTH_PREFIX = '/api/v1/auth';
-const REGISTER_URL = `${AUTH_PREFIX}/register`;
 const LOGOUT_URL = `${AUTH_PREFIX}/logout`;
 const ME_URL = '/api/v1/me';
 
@@ -28,14 +27,10 @@ describe('authentication flow', () => {
 
   it('should register, access the current user, log out, and reject subsequent access', async () => {
     // 1. register user
-    const registerRes = await testClient.request({
-      method: 'POST',
-      url: REGISTER_URL,
-      payload: {
-        email: TEST_EMAIL,
-        password: TEST_PASSWORD,
-        inviteCode: REGISTRATION_CODE,
-      },
+    const registerRes = await testClient.registerAndLogin({
+      email: TEST_EMAIL,
+      password: TEST_PASSWORD,
+      inviteCode: REGISTRATION_CODE,
     });
     expect(registerRes.statusCode).toBe(201);
 
