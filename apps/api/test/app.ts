@@ -18,6 +18,8 @@ export function buildTestConfig(env: Env = {}): Config {
     SESSION_SECRET: 'test-session-secret-at-least-32-characters',
     WEB_ORIGIN: 'http://localhost:5173',
     REGISTRATION_CODE: 'test-invite-code',
+    RATE_LIMIT_MAX: '1000',
+    RATE_LIMIT_WINDOW_SECONDS: '60',
     ...env,
   });
 }

@@ -30,6 +30,16 @@ export const configSchema = dbConfigSchema
       .min(1, 'must be between 1 and 65535')
       .max(65535, 'must be between 1 and 65535')
       .default(3000),
+    RATE_LIMIT_MAX: z.coerce
+      .number()
+      .int('must be a whole number')
+      .positive('must be positive')
+      .default(10),
+    RATE_LIMIT_WINDOW_SECONDS: z.coerce
+      .number()
+      .int('must be a whole number')
+      .positive('must be positive')
+      .default(60),
   })
   .refine(
     (c) => !(c.NODE_ENV === 'production' && c.SESSION_SECRET.startsWith(PLACEHOLDER_PREFIX)),
@@ -57,5 +67,7 @@ export function redactConfig(config: Config): Record<string, string> {
     SESSION_SECRET: '[redacted]',
     REGISTRATION_CODE: '[redacted]',
     PORT: String(config.PORT),
+    RATE_LIMIT_MAX: String(config.RATE_LIMIT_MAX),
+    RATE_LIMIT_WINDOW_SECONDS: String(config.RATE_LIMIT_WINDOW_SECONDS),
   };
 }
