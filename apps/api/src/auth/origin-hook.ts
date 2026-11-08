@@ -1,8 +1,9 @@
-import { type FastifyReply, type FastifyRequest } from 'fastify';
+import { type FastifyRequest } from 'fastify';
 import { isOriginAllowed } from './origin.js';
+import { HttpError } from '../errors.js';
 
 export function originHook(allowedOrigin: string) {
-  return async (request: FastifyRequest, reply: FastifyReply) => {
+  return async (request: FastifyRequest): Promise<void> => {
     if (
       !isOriginAllowed(
         request.method,
@@ -19,7 +20,7 @@ export function originHook(allowedOrigin: string) {
         },
         'Rejected request with invalid origin'
       );
-      return reply.code(403).send({ error: 'Forbidden' });
+      throw new HttpError(403, 'Forbidden');
     }
   };
 }
