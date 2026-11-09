@@ -44,10 +44,20 @@ export function useLogin() {
 
 export function useLogout() {
   const queryClient = useQueryClient();
+
+  const signOutLocally = async () => {
+    await queryClient.cancelQueries();
+    queryClient.setQueryData(currentUserQueryKey, null);
+    queryClient.removeQueries({
+      predicate: (query) => query.queryKey[0] !== currentUserQueryKey[0],
+    });
+  };
+
   return useMutation({
     mutationFn: logout,
-    onSuccess: () => {
-      queryClient.clear();
+    onSuccess: signOutLocally,
+    onError: async (error) => {
+      if (error instanceof ApiError && error.status === 401) await signOutLocally();
     },
   });
 }

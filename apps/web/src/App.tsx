@@ -6,6 +6,7 @@ import LoginPage from '@/pages/Login';
 import RegisterPage from '@/pages/Register';
 import AppPage from '@/pages/App';
 import NotFoundPage from '@/pages/NotFound';
+import { RequireAuth } from './components/auth/RequireAuth';
 
 const queryClient = new QueryClient();
 export default function App() {
@@ -15,7 +16,9 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/app" element={<AppPage />} />
+        <Route element={<RequireAuth />}>
+          <Route path="/app" element={<AppPage />} />
+        </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </QueryClientProvider>
