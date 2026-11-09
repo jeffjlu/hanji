@@ -1,7 +1,7 @@
 import { useRegister } from '@/lib/queries/auth';
 import { useDocumentTitle } from '@/lib/useDocumentTitle';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
 import React from 'react';
 import { useNavigate } from 'react-router';
 

@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { useCurrentUser, useLogout } from '@/lib/queries/auth';
 import { useDocumentTitle } from '@/lib/useDocumentTitle';
 import { useNavigate } from 'react-router';
