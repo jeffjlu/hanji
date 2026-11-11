@@ -8,7 +8,6 @@ const E2E_DATABASE_URL =
 
 export default defineConfig({
   testDir: './e2e',
-  globalSetup: 'e2e/global-setup.ts',
   fullyParallel: false,
   forbidOnly: !!process.env['CI'],
   retries: process.env['CI'] ? 2 : 0,
@@ -27,6 +26,8 @@ export default defineConfig({
       command: 'pnpm --filter @hanji/api start:e2e',
       url: `${API}/api/v1/health`,
       reuseExistingServer: false,
+      stdout: 'pipe',
+      stderr: 'pipe',
       env: {
         NODE_ENV: 'test',
         DATABASE_URL: E2E_DATABASE_URL,
