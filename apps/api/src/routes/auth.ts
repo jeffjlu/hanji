@@ -26,7 +26,12 @@ export function authRoutes(deps: Deps): FastifyPluginAsync {
         const { email, password, inviteCode } = registerRequestSchema.parse(request.body);
 
         if (!safeCompare(inviteCode, deps.config.REGISTRATION_CODE))
-          throw new HttpError(403, 'Invalid registration code');
+          throw new HttpError(403, 'Forbidden', [
+            {
+              field: 'inviteCode',
+              message: 'Invalid invite code.',
+            },
+          ]);
 
         const passwordHash = await hashPassword(password);
         const { user, token } = await deps.db.transaction(async (tx) => {
@@ -34,7 +39,13 @@ export function authRoutes(deps: Deps): FastifyPluginAsync {
             email,
             passwordHash,
           });
-          if (!createUserResult.success) throw new HttpError(409, 'Email is already registered');
+          if (!createUserResult.success)
+            throw new HttpError(409, 'Conflict', [
+              {
+                field: 'email',
+                message: 'An account with this email already exists.',
+              },
+            ]);
 
           const newUser = createUserResult.user;
           const token = generateToken();
