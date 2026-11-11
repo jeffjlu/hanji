@@ -25,7 +25,7 @@ export default function AppPage() {
       <h1>Hanji App</h1>
       <h1>Welcome, {user!.email}</h1>
       <Button onClick={handleLogout} disabled={logout.isPending}>
-        Log out
+        Sign out
       </Button>
     </main>
   );
