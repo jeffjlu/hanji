@@ -74,6 +74,11 @@ jobs:
       - name: Run the schema test from P0-06
         run: pnpm exec vitest run --project integration packages/db/test/migrate.int.test.ts
 
+      - name: Create and migrate the e2e database
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -c 'CREATE DATABASE hanji_e2e'
+          DATABASE_URL=$E2E_DATABASE_URL pnpm db:migrate
+
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 60

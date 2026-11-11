@@ -24,7 +24,7 @@ export default defineConfig({
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: [
     {
-      command: 'pnpm --filter @hanji/api dev',
+      command: 'pnpm --filter @hanji/api start:e2e',
       url: `${API}/api/v1/health`,
       reuseExistingServer: false,
       env: {

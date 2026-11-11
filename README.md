@@ -1,5 +1,7 @@
 # Hanji
 
+[![CI](https://github.com/jeffjlu/hanji/actions/workflows/ci.yml/badge.svg)](https://github.com/jeffjlu/hanji/actions/workflows/ci.yml)
+
 Hanji is an evidence-based Chinese and Japanese learning app for English-speaking adults preparing for a trip. It combines spaced retrieval practice (FSRS), frequency-ordered vocabulary, graded reading and listening input, and tone/pitch-accent ear training, with a game layer (XP, levels, a skill map) computed from measured memory strength. It's a work in progress — Phase 0 (foundations: monorepo, CI, local database, auth, health check, web shell) is in progress and none of the plan's features are deployed yet.
 
 ## Status
