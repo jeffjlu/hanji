@@ -20,9 +20,12 @@ execFileSync(
   'psql',
   [
     adminUrl.toString(),
-    '-v', 'ON_ERROR_STOP=1',
-    '-c', 'DROP DATABASE IF EXISTS hanji_e2e WITH (FORCE)',
-    '-c', 'CREATE DATABASE hanji_e2e',
+    '-v',
+    'ON_ERROR_STOP=1',
+    '-c',
+    'DROP DATABASE IF EXISTS hanji_e2e WITH (FORCE)',
+    '-c',
+    'CREATE DATABASE hanji_e2e',
   ],
   { stdio: 'inherit' }
 );
