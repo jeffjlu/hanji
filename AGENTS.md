@@ -59,6 +59,15 @@ pnpm dev
 pnpm e2e
 ```
 
+### Formatting
+```bash
+# Format all files with Prettier
+pnpm format
+
+# Check formatting without writing
+pnpm format:check
+```
+
 ## Conventions
 
 - **Monorepo**: pnpm workspaces with `apps/*`, `packages/*`, `tools/*`
@@ -67,7 +76,7 @@ pnpm e2e
 - **Shared config**: Root `tsconfig.json` extended by all packages
 - **Linting**: ESLint 9 with TypeScript ESLint, Prettier for formatting
 - **Testing**: Vitest for unit/integration, Playwright for e2e
-- **Database**: PostgreSQL 16+, Drizzle ORM, migrations in `packages/db/migrations`
+- **Database**: PostgreSQL 18, Drizzle ORM, migrations in `packages/db/migrations`
 - **API**: Fastify with Zod validation (no generated OpenAPI; one origin serves app + API)
 - **Web**: Vite, React 19, React Router, Tailwind CSS v4, shadcn/ui
 - **Auth**: Email/password, Argon2id, server-side sessions, httpOnly SameSite=Lax cookies, Origin check on state-changing requests (no CSRF tokens)
