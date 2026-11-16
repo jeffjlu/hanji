@@ -15,7 +15,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "ts-fsrs": "^5.4.2"
+    "ts-fsrs": "6.0.0",
+    "@hanji/schemas": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^6.0.3",
