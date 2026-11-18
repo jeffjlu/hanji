@@ -1,5 +1,5 @@
 import { bigint, check, index, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm/sql/sql';
+import { sql } from 'drizzle-orm';
 
 export const appUser = pgTable(
   'app_user',
