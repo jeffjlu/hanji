@@ -64,7 +64,6 @@ export const userCardStateSchema = z.object({
   cardId: z.uuid(),
   state: z.enum(CARD_STATES),
   due: z.iso.datetime(),
-  stabilityFast: z.number().min(0),
   stability: z.number().min(0),
   difficulty: z.number().min(1).max(10),
   reps: z.int().nonnegative(),

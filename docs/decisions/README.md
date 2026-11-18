@@ -9,3 +9,4 @@ Each record is numbered `NNNN-slug.md` and explains one choice, the alternatives
 - `0001-monorepo-typescript.md` — TypeScript monorepo (accepted)
 - `0002-auth-and-single-origin.md` — session design, invite-only registration, Origin check, single-origin deployment (accepted)
 - `0003-postgres-18.md` — PostgreSQL 18 for the local database (accepted)
+- `0004-fsrs.md` — FSRS v6 (ts-fsrs 6.0.0) (accepted)
