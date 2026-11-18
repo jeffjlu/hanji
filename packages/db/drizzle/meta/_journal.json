@@ -8,6 +8,20 @@
       "when": 1793682064474,
       "tag": "0000_greedy_hercules",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794978048418,
+      "tag": "0001_gigantic_spyke",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794978122674,
+      "tag": "0002_glorious_blue_shield",
+      "breakpoints": true
     }
   ]
 }
