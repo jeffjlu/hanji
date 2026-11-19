@@ -2,8 +2,9 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { sql as dsql, eq } from 'drizzle-orm';
 import { createTestDatabase } from '../src/testing/db.js';
 import { card, entry, kanji, unit } from '../src/schema/index.js';
-import { expectPgError, id, PG } from './helpers/helpers.js';
+import { expectPgError, PG } from './helpers/helpers.js';
 import { cardRow, entryRow, kanjiRow, unitRow } from './helpers/rows.js';
+import { id } from '../src/testing/ids.js';
 
 describe('content tables', () => {
   let testDatabase: Awaited<ReturnType<typeof createTestDatabase>>;

@@ -2,3 +2,4 @@ export * from './db.js';
 export * from './global-setup.js';
 export * from './catalog.js';
 export * from './auth.js';
+export * from './ids.js';

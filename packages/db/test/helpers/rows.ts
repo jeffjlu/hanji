@@ -1,4 +1,4 @@
-import { id } from './helpers.js';
+import { id } from '../../src/testing/ids.js';
 
 export const unitRow = (n: number, o: Record<string, unknown> = {}) => ({
   id: id(n),
