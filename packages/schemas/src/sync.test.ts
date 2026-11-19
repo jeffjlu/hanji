@@ -207,7 +207,6 @@ const baseCardState = {
   cardId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
   state: 'New',
   due: '2024-06-01T12:00:00Z',
-  stabilityFast: 10.5,
   stability: 10.5,
   difficulty: 2.5,
   reps: 3,
@@ -258,13 +257,22 @@ describe('userCardStateSchema', () => {
   ];
 
   it.each(validCases)('accepts $name', ({ input }) => {
-    expect(userCardStateSchema.safeParse(input).success).toBe(true);
+    const result = userCardStateSchema.safeParse(input);
+    expect(result.success).toBe(true);
+    expect(result.data).toEqual(input);
   });
 
   it.each(invalidCases)('rejects $name', ({ input, path }) => {
     const result = userCardStateSchema.safeParse(input);
     expect(result.success).toBe(false);
     expect(result.error?.issues.map((i) => i.path[0])).toContain(path);
+  });
+
+  it.each(Object.keys(baseCardState))('rejects when %s is missing', (key) => {
+    const { [key]: _omitted, ...withoutField } = baseCardState as Record<string, unknown>;
+    const result = userCardStateSchema.safeParse(withoutField);
+    expect(result.success).toBe(false);
+    expect(result.error?.issues.map((i) => i.path[0])).toContain(key);
   });
 });
 
