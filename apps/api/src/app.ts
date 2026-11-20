@@ -1,4 +1,4 @@
-import Fastify from 'fastify';
+import Fastify, { type FastifyInstance } from 'fastify';
 import helmet from '@fastify/helmet';
 import cookie from '@fastify/cookie';
 import rateLimit from '@fastify/rate-limit';
@@ -7,7 +7,7 @@ import { apiRoutes } from './routes/index.js';
 import { errorHandler, HttpError, notFoundHandler } from './errors.js';
 import { originHook } from './auth/origin-hook.js';
 
-export async function buildApp(deps: Deps) {
+export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   const app = Fastify({
     logger:
       deps.config.NODE_ENV === 'development'

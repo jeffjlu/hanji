@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { TestClient } from './test-client.js';
-import { createTestApp } from './app.js';
+import { createTestApp, type TestApp } from './app.js';
 
 const REGISTRATION_CODE = 'test-invite-code';
 const AUTH_PREFIX = '/api/v1/auth';
@@ -11,7 +11,7 @@ const TEST_EMAIL = 'test@example.com';
 const TEST_PASSWORD = 'thisIsALongEnoughPassword';
 
 describe('authentication flow', () => {
-  let testApp: Awaited<ReturnType<typeof createTestApp>>;
+  let testApp: TestApp;
   let testClient: TestClient;
 
   beforeAll(async () => {

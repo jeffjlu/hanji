@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { createTestApp } from '../../test/app.js';
+import { createTestApp, type TestApp } from '../../test/app.js';
 import { hashPassword } from '../auth/password.js';
-import { createSession, createUser, findUserByEmail } from '@hanji/db';
+import { createSession, createUser, type Database, findUserByEmail } from '@hanji/db';
 import { getSessionExpiry, hashToken, SESSION_COOKIE_NAME } from '../auth/session.js';
 import { findSessionsByUserId } from '@hanji/db/testing';
 import { TestClient } from '../../test/test-client.js';
@@ -17,11 +17,7 @@ const WEB_ORIGIN = 'http://localhost:5173';
 const WRONG_ORIGIN = 'http://evil.example.com';
 const TEST_PASSWORD = 'thisIsALongEnoughPassword';
 
-async function createUserWithSession(
-  db: Awaited<ReturnType<typeof createTestApp>>['db'],
-  email: string,
-  token: string
-) {
+async function createUserWithSession(db: Database, email: string, token: string) {
   const passwordHash = await hashPassword(TEST_PASSWORD);
   const result = await createUser(db, { email, passwordHash });
   if (!result.success) throw new Error('Failed to create test user');
@@ -34,7 +30,7 @@ async function createUserWithSession(
 }
 
 describe('Origin check', () => {
-  let testApp: Awaited<ReturnType<typeof createTestApp>>;
+  let testApp: TestApp;
   let testClient: TestClient;
 
   beforeAll(async () => {

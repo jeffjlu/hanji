@@ -1,4 +1,4 @@
-import Fastify from 'fastify';
+import Fastify, { type FastifyInstance } from 'fastify';
 import rateLimit from '@fastify/rate-limit';
 import { describe, expect, it } from 'vitest';
 import { errorHandler, HttpError } from '../src/errors.js';
@@ -32,7 +32,7 @@ async function buildRateLimitApp({
 }
 
 async function postDummy(
-  app: Awaited<ReturnType<typeof buildRateLimitApp>>,
+  app: FastifyInstance,
   remoteAddress: string,
   headers?: Record<string, string>
 ) {
