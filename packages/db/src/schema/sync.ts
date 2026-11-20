@@ -49,6 +49,9 @@ export const reviewEvent = pgTable(
   ]
 );
 
+export type ReviewEvent = typeof reviewEvent.$inferSelect;
+export type NewReviewEvent = typeof reviewEvent.$inferInsert;
+
 export const userCard = pgTable(
   'user_card',
   {

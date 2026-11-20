@@ -49,7 +49,8 @@ export const syncRequestSchema = z.object({
   sinceSeq: z.int().nonnegative(),
   events: z.looseObject({ id: z.string() }).array().max(MAX_EVENTS_PER_REQUEST),
 });
-export type SyncRequest = Omit<z.infer<typeof syncRequestSchema>, 'events'> & {
+export type SyncEnvelope = z.infer<typeof syncRequestSchema>;
+export type SyncRequest = Omit<SyncEnvelope, 'events'> & {
   events: ReviewEventIn[];
 };
 
@@ -59,6 +60,7 @@ export const rejectedSchema = z
     reason: z.enum(['future', 'unknown_card', 'invalid']),
   })
   .array();
+export type Rejected = z.infer<typeof rejectedSchema>;
 
 export const userCardStateSchema = z.object({
   cardId: z.uuid(),

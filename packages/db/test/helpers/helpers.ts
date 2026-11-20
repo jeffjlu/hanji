@@ -2,7 +2,6 @@ import { expect } from 'vitest';
 
 /** Valid, deterministic UUIDs: id(1), id(2), ... */
 
-
 type PgErrorLike = { code?: string; constraint_name?: string };
 
 /**
