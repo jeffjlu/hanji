@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { TestClient } from '../../test/test-client.js';
 import { createTestApp, type TestApp } from '../../test/app.js';
-import { createSession, createUser, extendSession, findUserByEmail, type schema } from '@hanji/db';
+import { createSession, createUser, extendSession, findUserByEmail, type User } from '@hanji/db';
 import { findSessionsByUserId } from '@hanji/db/testing';
 import { hashPassword } from '../auth/password.js';
 import { getSessionExpiry, hashToken, SESSION_COOKIE_NAME } from '../auth/session.js';
@@ -14,7 +14,7 @@ const REGISTRATION_CODE = 'test-invite-code';
 
 describe('GET /api/v1/me', () => {
   let testApp: TestApp;
-  let user: schema.User;
+  let user: User;
   let testClient: TestClient;
 
   beforeAll(async () => {
