@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { findStoredEvents, findUserByEmail, findUserById } from '@hanji/db';
+import { findStoredEventsByUserId, findUserByEmail, findUserById } from '@hanji/db';
 import {
   FIXTURE,
   id,
@@ -11,13 +11,12 @@ import {
 } from '@hanji/db/testing';
 import { createTestApp, type TestApp } from './app.js';
 import { TestClient } from './test-client.js';
-import type { ReviewEventIn } from '@hanji/schemas';
+import { MAX_FUTURE_SKEW, type ReviewEventIn } from '@hanji/schemas';
 import { type InjectOptions } from 'fastify';
 
 const SYNC_URL = '/api/v1/sync';
 const DEVICE_ID = id(800);
 const NOW = new Date('2026-03-01T12:00:00.000Z');
-const FIVE_MIN = 5 * 60_000;
 
 export const plus = (d: Date, ms: number) => new Date(d.getTime() + ms).toISOString();
 
@@ -87,7 +86,7 @@ describe('POST /api/v1/sync', () => {
         { origin: 'https://evil.example' }
       );
       expect(res.statusCode).toBe(403);
-      expect(await findStoredEvents(ctx.db, userId)).toHaveLength(0);
+      expect(await findStoredEventsByUserId(ctx.db, userId)).toHaveLength(0);
     });
 
     it('returns 403 when the origin header is omitted', async () => {
@@ -146,12 +145,12 @@ describe('POST /api/v1/sync', () => {
       expect(res.statusCode).toBe(200);
       expect(res.json().accepted).toEqual([good.id]);
       expect(res.json().rejected).toEqual([{ id: bad.id, reason: 'invalid' }]);
-      expect((await findStoredEvents(ctx.db, userId)).map((e) => e.id)).toEqual([good.id]);
+      expect((await findStoredEventsByUserId(ctx.db, userId)).map((e) => e.id)).toEqual([good.id]);
     });
 
     it('accepts exactly 5 minutes ahead and rejects 5 minutes + 1s as future', async () => {
-      const ok = makeEvent(1, { reviewedAt: plus(NOW, FIVE_MIN) });
-      const bad = makeEvent(2, { reviewedAt: plus(NOW, FIVE_MIN + 1000) });
+      const ok = makeEvent(1, { reviewedAt: plus(NOW, MAX_FUTURE_SKEW) });
+      const bad = makeEvent(2, { reviewedAt: plus(NOW, MAX_FUTURE_SKEW + 1000) });
       const res = await sync([ok, bad]);
       expect(res.json().accepted).toEqual([ok.id]);
       expect(res.json().rejected).toEqual([{ id: bad.id, reason: 'future' }]);
@@ -161,7 +160,7 @@ describe('POST /api/v1/sync', () => {
       const bad = makeEvent(1, { cardId: id(999) });
       const res = await sync([bad]);
       expect(res.json().rejected).toEqual([{ id: bad.id, reason: 'unknown_card' }]);
-      expect(await findStoredEvents(ctx.db, userId)).toHaveLength(0);
+      expect(await findStoredEventsByUserId(ctx.db, userId)).toHaveLength(0);
     });
 
     it('stores only the valid event of a mixed batch and consumes no seq for rejects', async () => {
@@ -173,7 +172,9 @@ describe('POST /api/v1/sync', () => {
       const res = await sync([valid, invalid, future, unknownCard, valid2]);
       expect(res.json().accepted).toEqual([valid.id, valid2.id]);
       expect(res.json().rejected).toHaveLength(3);
-      expect((await findStoredEvents(ctx.db, userId)).map((e) => e.userSeq)).toEqual([1, 2]);
+      expect((await findStoredEventsByUserId(ctx.db, userId)).map((e) => e.userSeq)).toEqual([
+        1, 2,
+      ]);
       expect(await lastSeq()).toBe(2);
     });
   });
@@ -186,9 +187,9 @@ describe('POST /api/v1/sync', () => {
       expect(res.json().accepted).toEqual(events.map((e) => e.id));
       expect(res.json().serverSeq).toBe(3);
       expect(res.json().cardStates).toEqual([]); // changes in P1-05
-      expect((await findStoredEvents(ctx.db, userId)).map((e) => [e.id, e.userSeq])).toEqual(
-        events.map((e, i) => [e.id, i + 1])
-      );
+      expect(
+        (await findStoredEventsByUserId(ctx.db, userId)).map((e) => [e.id, e.userSeq])
+      ).toEqual(events.map((e, i) => [e.id, i + 1]));
       expect(await lastSeq()).toBe(3);
     });
 
@@ -196,14 +197,16 @@ describe('POST /api/v1/sync', () => {
       await sync([makeEvent(1), makeEvent(2)]);
       const res = await sync([makeEvent(3)], 2);
       expect(res.json().serverSeq).toBe(3);
-      expect((await findStoredEvents(ctx.db, userId)).map((e) => e.userSeq)).toEqual([1, 2, 3]);
+      expect((await findStoredEventsByUserId(ctx.db, userId)).map((e) => e.userSeq)).toEqual([
+        1, 2, 3,
+      ]);
     });
 
     it('computes local_day from the event time zone and sets received_at and device_id', async () => {
       // 2026-02-28T23:30Z is already 12:30 on 1 March in Auckland.
       const e = makeEvent(1, { reviewedAt: '2026-02-28T23:30:00.000Z', tz: 'Pacific/Auckland' });
       await sync([e]);
-      const [row] = await findStoredEvents(ctx.db, userId);
+      const [row] = await findStoredEventsByUserId(ctx.db, userId);
       expect(row?.localDay).toBe('2026-03-01');
       expect(row?.receivedAt).toBeInstanceOf(Date);
       expect(row?.deviceId).toBe(DEVICE_ID);
@@ -222,7 +225,7 @@ describe('POST /api/v1/sync', () => {
       const first = await sync(events);
       const second = await sync(events);
       expect(second.json().accepted).toEqual(first.json().accepted);
-      expect(await findStoredEvents(ctx.db, userId)).toHaveLength(2);
+      expect(await findStoredEventsByUserId(ctx.db, userId)).toHaveLength(2);
       expect(await lastSeq()).toBe(2);
     });
 
@@ -232,7 +235,7 @@ describe('POST /api/v1/sync', () => {
       const mixed = [...old, makeEvent(3), makeEvent(4), makeEvent(5)];
       const res = await sync(mixed);
       expect(res.json().accepted).toHaveLength(5);
-      expect((await findStoredEvents(ctx.db, userId)).map((e) => e.userSeq)).toEqual([
+      expect((await findStoredEventsByUserId(ctx.db, userId)).map((e) => e.userSeq)).toEqual([
         1, 2, 3, 4, 5,
       ]);
     });
@@ -241,7 +244,7 @@ describe('POST /api/v1/sync', () => {
       const e = makeEvent(1);
       const res = await sync([e, e]);
       expect(res.json().accepted).toEqual([e.id]);
-      expect(await findStoredEvents(ctx.db, userId)).toHaveLength(1);
+      expect(await findStoredEventsByUserId(ctx.db, userId)).toHaveLength(1);
       expect(await lastSeq()).toBe(1);
     });
 
@@ -258,7 +261,7 @@ describe('POST /api/v1/sync', () => {
       const res = await sync([shared]);
       expect(res.json().accepted).toEqual([]);
       expect(res.json().rejected).toEqual([{ id: shared.id, reason: 'invalid' }]);
-      expect(await findStoredEvents(ctx.db, userId)).toHaveLength(0);
+      expect(await findStoredEventsByUserId(ctx.db, userId)).toHaveLength(0);
     });
   });
 
@@ -269,7 +272,7 @@ describe('POST /api/v1/sync', () => {
       );
       const responses = await Promise.all(batches.map((events) => sync(events)));
       expect(responses.every((r) => r.statusCode === 200)).toBe(true);
-      expect((await findStoredEvents(ctx.db, userId)).map((e) => e.userSeq)).toEqual(
+      expect((await findStoredEventsByUserId(ctx.db, userId)).map((e) => e.userSeq)).toEqual(
         Array.from({ length: 100 }, (_, i) => i + 1)
       );
       expect(await lastSeq()).toBe(100);
@@ -282,7 +285,7 @@ describe('POST /api/v1/sync', () => {
         sync([...shared, makeEvent(102)]),
         sync([...shared, makeEvent(103)]),
       ]);
-      const rows = await findStoredEvents(ctx.db, userId);
+      const rows = await findStoredEventsByUserId(ctx.db, userId);
       expect(rows).toHaveLength(13);
       expect(rows.map((r) => r.userSeq)).toEqual(Array.from({ length: 13 }, (_, i) => i + 1));
       expect(await lastSeq()).toBe(13);
@@ -293,7 +296,7 @@ describe('POST /api/v1/sync', () => {
       try {
         const res = await sync([makeEvent(1), makeEvent(2)]);
         expect(res.statusCode).toBe(500);
-        expect(await findStoredEvents(ctx.db, userId)).toHaveLength(0);
+        expect(await findStoredEventsByUserId(ctx.db, userId)).toHaveLength(0);
         expect(await lastSeq()).toBe(0);
       } finally {
         await removeLastSeqFailure(ctx.db);
