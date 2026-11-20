@@ -1,13 +1,15 @@
 import { loadConfig, type Config } from '../src/config.js';
 import { buildApp } from '../src/app.js';
 import { createTestDatabase } from '@hanji/db/testing';
+import { type Database, type Sql } from '@hanji/db';
+import { type FastifyInstance } from 'fastify';
 
 type Env = Record<string, string | undefined>;
-type TestApp = {
-  app: Awaited<ReturnType<typeof buildApp>>;
+export type TestApp = {
+  app: FastifyInstance;
   config: Config;
-  db: Awaited<ReturnType<typeof createTestDatabase>>['db'];
-  sql: Awaited<ReturnType<typeof createTestDatabase>>['sql'];
+  db: Database;
+  sql: Sql;
   dispose: () => Promise<void>;
 };
 

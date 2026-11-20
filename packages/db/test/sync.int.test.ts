@@ -2,8 +2,9 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { sql as dsql, eq } from 'drizzle-orm';
 import { createTestDatabase } from '../src/testing/db.js';
 import { appUser, card, entry, reviewEvent, unit, userCard } from '../src/schema/index.js';
-import { expectPgError, id, PG } from './helpers/helpers.js';
+import { expectPgError, PG } from './helpers/helpers.js';
 import { cardRow, entryRow, unitRow } from './helpers/rows.js';
+import { id } from '../src/testing/ids.js';
 
 const CARD_ID = id(301);
 const USER_A = id(901);

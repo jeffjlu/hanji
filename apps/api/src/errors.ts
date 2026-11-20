@@ -17,11 +17,27 @@ export class HttpError extends Error {
 function statusOf(error: unknown): number {
   if (error instanceof ZodError) {
     return 400;
-  } else if (error instanceof HttpError) {
+  } else if (error instanceof HttpError || isFastifyClientError(error)) {
     return error.statusCode;
   } else {
     return 500;
   }
+}
+
+/**
+ * Returns true if error is one that Fastify raises itself for bad requests: body too large (413),
+ * malformed JSON (400), unsupported content type (415).
+ */
+function isFastifyClientError(error: unknown): error is Error & { statusCode: number } {
+  if (typeof error !== 'object' || error === null) return false;
+  const { statusCode, code } = error as { statusCode?: unknown; code?: unknown };
+  return (
+    typeof code === 'string' &&
+    code.startsWith('FST_ERR_') &&
+    typeof statusCode === 'number' &&
+    statusCode >= 400 &&
+    statusCode < 500
+  );
 }
 
 function sendProblem(

@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { createTestApp } from '../../test/app.js';
+import { createTestApp, type TestApp } from '../../test/app.js';
 import { hashPassword } from '../auth/password.js';
 import { getSessionExpiry, hashToken } from '../auth/session.js';
 import { createSession, createUser, findUserByEmail } from '@hanji/db';
@@ -37,7 +37,7 @@ function loginPayload(overrides: Partial<{ email: string; password: string }> = 
   };
 }
 
-let testApp: Awaited<ReturnType<typeof createTestApp>>;
+let testApp: TestApp;
 let testClient: TestClient;
 
 beforeAll(async () => {

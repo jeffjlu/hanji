@@ -1,13 +1,14 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createDb } from '@hanji/db';
 import { buildApp } from '../src/app.js';
-import { buildTestConfig, createTestApp } from './app.js';
+import { buildTestConfig, createTestApp, type TestApp } from './app.js';
+import { type FastifyInstance } from 'fastify';
 
 const HEALTH_ENDPOINT = '/api/v1/health';
 
 describe('GET /api/v1/health', () => {
   describe('with a healthy database', () => {
-    let testApp: Awaited<ReturnType<typeof createTestApp>>;
+    let testApp: TestApp;
 
     beforeAll(async () => {
       testApp = await createTestApp();
@@ -24,7 +25,7 @@ describe('GET /api/v1/health', () => {
   });
 
   describe('with an unreachable database', () => {
-    let app: Awaited<ReturnType<typeof buildApp>>;
+    let app: FastifyInstance;
 
     beforeAll(async () => {
       // Nothing listens on port 1, so every connection attempt fails.

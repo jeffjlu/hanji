@@ -56,3 +56,19 @@ export async function findUserById(executor: Executor, id: string): Promise<User
 
   return user;
 }
+
+/**
+ * Returns and locks the user with given id, or throws if no user is found with id.
+ */
+export async function lockUserById(executor: Executor, id: string): Promise<User> {
+  const [user] = await executor.select().from(appUser).where(eq(appUser.id, id)).for('update');
+  if (!user) throw new Error(`No user found with id ${id}`);
+  return user;
+}
+
+/**
+ * Updates lastSeq for user with given id and returns updated row.
+ */
+export async function setLastSeq(executor: Executor, id: string, lastSeq: number) {
+  return await executor.update(appUser).set({ lastSeq }).where(eq(appUser.id, id)).returning();
+}

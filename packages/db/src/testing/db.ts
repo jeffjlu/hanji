@@ -1,6 +1,6 @@
 import { inject } from 'vitest';
 import { randomBytes } from 'node:crypto';
-import { createDb, migrateDatabase, type Sql } from '@hanji/db';
+import { createDb, type Database, migrateDatabase, type Sql } from '@hanji/db';
 
 declare module 'vitest' {
   interface ProvidedContext {
@@ -11,12 +11,18 @@ declare module 'vitest' {
 const TEST_DB_PREFIX = 'test_';
 const TEST_DB_NAME_PATTERN = /^test_[0-9a-f]{8}$/;
 
+export type TestDatabase = {
+  db: Database;
+  sql: Sql;
+  databaseURL: URL['href'];
+  dispose: () => Promise<void>;
+};
 /**
  * Creates a per-file test database: `CREATE DATABASE test_<random>` on the admin
  * connection, runs migrations against it, and returns a `createDb` handle plus a
  * `dispose()` that closes the pool and drops the database (WITH (FORCE)).
  */
-export async function createTestDatabase({ migrate = true } = {}) {
+export async function createTestDatabase({ migrate = true } = {}): Promise<TestDatabase> {
   const adminDatabaseUrl = inject('adminDatabaseUrl');
 
   const admin = createDb(adminDatabaseUrl, { max: 1 });

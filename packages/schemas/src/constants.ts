@@ -25,3 +25,6 @@ export const MIN_RATING = Rating.Again;
 export const MAX_RATING = Rating.Easy;
 
 export const CARD_KINDS = ['recognition', 'production', 'kanji'] as const;
+
+/** Maximum future skew for a review event's reviewedAt, in milliseconds */
+export const MAX_FUTURE_SKEW = 5 * 60 * 1000;

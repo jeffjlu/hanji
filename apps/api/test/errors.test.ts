@@ -149,6 +149,17 @@ describe('errorHandler', () => {
     );
   });
 
+  it('should pass through Fastify client errors such as 413', async () => {
+    const fastifyError = Object.assign(new Error('Request body is too large'), {
+      statusCode: 413,
+      code: 'FST_ERR_CTP_BODY_TOO_LARGE',
+    });
+
+    await assertErrorHandler(fastifyError, 413, 40, 'Client error', (problem) => {
+      expect(problem.detail).toBeUndefined();
+    });
+  });
+
   it('should handle non-Error objects and return 500 status code', async () => {
     const nonError = { message: 'This is not an error object' };
 
