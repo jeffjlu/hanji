@@ -3,13 +3,11 @@ import { type NewReviewEvent, reviewEvent } from '../schema/sync.js';
 import { type Executor } from './executor.js';
 
 export async function findStoredEventsByUserId(executor: Executor, userId: string) {
-  return userId.length
-    ? executor
-        .select()
-        .from(reviewEvent)
-        .where(eq(reviewEvent.userId, userId))
-        .orderBy(reviewEvent.userSeq)
-    : [];
+  return executor
+    .select()
+    .from(reviewEvent)
+    .where(eq(reviewEvent.userId, userId))
+    .orderBy(reviewEvent.userSeq);
 }
 
 /**
