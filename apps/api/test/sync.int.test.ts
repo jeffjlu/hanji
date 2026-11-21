@@ -1,17 +1,20 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { findStoredEventsByUserId, findUserByEmail, findUserById } from '@hanji/db';
+import { findCardEvents, findStoredEventsByUserId, findUserByEmail, findUserById } from '@hanji/db';
 import {
   FIXTURE,
   id,
   id7,
   insertContentFixture,
   installLastSeqFailure,
+  installUserCardFailure,
   removeLastSeqFailure,
+  removeUserCardFailure,
   resetTables,
 } from '@hanji/db/testing';
 import { createTestApp, type TestApp } from './app.js';
 import { TestClient } from './test-client.js';
-import { MAX_FUTURE_SKEW, type ReviewEventIn } from '@hanji/schemas';
+import { replayCard } from '@hanji/core';
+import { MAX_FUTURE_SKEW, syncResponseSchema, type ReviewEventIn } from '@hanji/schemas';
 import { type InjectOptions } from 'fastify';
 
 const SYNC_URL = '/api/v1/sync';
@@ -186,7 +189,8 @@ describe('POST /api/v1/sync', () => {
       expect(res.statusCode).toBe(200);
       expect(res.json().accepted).toEqual(events.map((e) => e.id));
       expect(res.json().serverSeq).toBe(3);
-      expect(res.json().cardStates).toEqual([]); // changes in P1-05
+      const expectedState = (await replayCard(events))!;
+      expect(res.json().cardStates).toEqual([{ ...expectedState, lastSeq: 3 }]);
       expect(
         (await findStoredEventsByUserId(ctx.db, userId)).map((e) => [e.id, e.userSeq])
       ).toEqual(events.map((e, i) => [e.id, i + 1]));
@@ -304,6 +308,194 @@ describe('POST /api/v1/sync', () => {
       const retry = await sync([makeEvent(1), makeEvent(2)]);
       expect(retry.statusCode).toBe(200);
       expect(await lastSeq()).toBe(2);
+    });
+  });
+
+  describe('card states', () => {
+    // ctx.sql returns timestamptz as postgres text ('2026-03-03 12:00:00+00'),
+    // not as a Date, so normalize to ISO before comparing with replay output.
+    const pgToIso = (value: string) =>
+      new Date(value.replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00')).toISOString();
+
+    const normalizeUserCardRow = (row: Record<string, unknown>) => ({
+      card_id: row['card_id'],
+      state: row['state'],
+      due: pgToIso(row['due'] as string),
+      stability: row['stability'],
+      difficulty: row['difficulty'],
+      reps: row['reps'],
+      lapses: row['lapses'],
+      last_review: pgToIso(row['last_review'] as string),
+      last_seq: row['last_seq'],
+      correct_reps: row['correct_reps'],
+      first_review: pgToIso(row['first_review'] as string),
+      scheduled_days: row['scheduled_days'],
+      learning_step: row['learning_step'],
+    });
+
+    const userCardRows = async () =>
+      ctx.sql`SELECT * FROM user_card WHERE user_id = ${userId} ORDER BY last_seq`;
+
+    it('re-sending leaves every user_card column identical', async () => {
+      const events = [makeEvent(1), makeEvent(2), makeEvent(3)];
+      await sync(events);
+
+      const before = await userCardRows();
+      const res = await sync(events);
+      const after = await userCardRows();
+
+      expect(after).toEqual(before);
+      expect(res.json().accepted).toEqual(events.map((e) => e.id));
+      expect(await lastSeq()).toBe(3);
+    });
+
+    it('replays a late event over the card’s full sorted history', async () => {
+      const cardId = FIXTURE.recognitionCardId;
+      const otherCardId = FIXTURE.productionCardId;
+      const newer = makeEvent(1, { reviewedAt: '2026-03-01T12:00:00.000Z' });
+      const older = makeEvent(2, { reviewedAt: '2026-03-01T11:00:00.000Z' });
+      const other = makeEvent(3, { cardId: otherCardId });
+
+      await sync([newer]); // cardId = user_seq 1
+      await sync([other]); // otherCard = user_seq 2
+
+      const otherBefore = (await userCardRows()).find((r) => r['card_id'] === otherCardId);
+      expect(otherBefore).toBeDefined();
+
+      // a client at a cursor still receives the corrected card after a late event arrives.
+      // cursor is otherCard's seq (2), so only cardId - whose last_seq advances past it - is returned.
+      const res = await sync([older], 2); // older = user_seq 3
+      expect(res.statusCode).toBe(200);
+      expect(res.json().cardStates.map((c: { cardId: string }) => c.cardId)).toEqual([cardId]);
+
+      const stored = await findCardEvents(ctx.db, userId, cardId);
+      const maxSeq = Math.max(...stored.map((e) => e.userSeq));
+      expect(maxSeq).toBe(3); // the late arrival holds the card's top user_seq
+
+      const cardRows =
+        await ctx.sql`SELECT * FROM user_card WHERE user_id = ${userId} AND card_id = ${cardId}`;
+      expect(cardRows).toHaveLength(1);
+      const row = cardRows[0]!;
+
+      const replayed = await replayCard([newer, older]);
+      expect(replayed).not.toBeNull();
+      expect(normalizeUserCardRow(row)).toEqual({
+        card_id: cardId,
+        state: replayed!.state,
+        due: replayed!.due,
+        stability: replayed!.stability,
+        difficulty: replayed!.difficulty,
+        reps: replayed!.reps,
+        lapses: replayed!.lapses,
+        last_review: replayed!.lastReview,
+        last_seq: maxSeq,
+        correct_reps: replayed!.correctReps,
+        first_review: replayed!.firstReview,
+        scheduled_days: replayed!.scheduledDays,
+        learning_step: replayed!.learningStep,
+      });
+
+      // other cards untouched
+      const otherAfter = (await userCardRows()).find((r) => r['card_id'] === otherCardId);
+      expect(otherAfter).toEqual(otherBefore);
+    });
+
+    it('replays per-event retention like core replayCard (0.90 → 0.80 → 0.97)', async () => {
+      // every reviewedAt must be at or before `now` (2026-03-01T12:00Z) or it is rejected as future
+      const events = [
+        makeEvent(1, { retention: 0.9, tz: 'UTC', reviewedAt: '2026-02-27T11:00:00.000Z' }),
+        makeEvent(2, { retention: 0.8, tz: 'Asia/Tokyo', reviewedAt: '2026-02-28T03:00:00.000Z' }),
+        makeEvent(3, {
+          retention: 0.97,
+          tz: 'America/New_York',
+          reviewedAt: '2026-03-01T11:00:00.000Z',
+        }),
+      ];
+      // any ordering or batching: shuffled across several syncs
+      const shuffled = [events[2], events[0], events[1]];
+      await sync([shuffled[0]]);
+      await sync([shuffled[1]]);
+      await sync([shuffled[2]]);
+
+      const cardRows = await ctx.sql`SELECT * FROM user_card WHERE user_id = ${userId}`;
+      expect(cardRows).toHaveLength(1);
+      const row = cardRows[0]!;
+
+      const replayed = await replayCard(events);
+      expect(replayed).not.toBeNull();
+      expect(normalizeUserCardRow(row)).toEqual({
+        card_id: FIXTURE.recognitionCardId,
+        state: replayed!.state,
+        due: replayed!.due,
+        stability: replayed!.stability,
+        difficulty: replayed!.difficulty,
+        reps: replayed!.reps,
+        lapses: replayed!.lapses,
+        last_review: replayed!.lastReview,
+        last_seq: 3,
+        correct_reps: replayed!.correctReps,
+        first_review: replayed!.firstReview,
+        scheduled_days: replayed!.scheduledDays,
+        learning_step: replayed!.learningStep,
+      });
+
+      // per-event retention matters: forcing every retention to 0.9 yields a different state
+      const uniform = events.map((e) => ({ ...e, retention: 0.9 }));
+      const replayedUniform = await replayCard(uniform);
+      expect(replayedUniform).not.toBeNull();
+      // per-event retention matters: forcing every retention to 0.9 yields a different due
+      expect(replayedUniform!.due).not.toBe(replayed!.due);
+    });
+
+    it('sinceSeq returns only cards above the cursor, and one user never sees another user’s cards', async () => {
+      await sync([makeEvent(1), makeEvent(2, { cardId: FIXTURE.productionCardId })]);
+
+      const rows = await userCardRows();
+      expect(rows.map((r) => [r['card_id'], r['last_seq']])).toEqual([
+        [FIXTURE.recognitionCardId, 1],
+        [FIXTURE.productionCardId, 2],
+      ]);
+
+      const cursor = rows[0]!['last_seq']; // only the second card is above it
+      const res = await sync([], cursor);
+      expect(res.json().cardStates).toHaveLength(1);
+      expect(res.json().cardStates[0]!.cardId).toBe(FIXTURE.productionCardId);
+      expect(res.json().cardStates[0]!.lastSeq).toBe(2);
+
+      const other = new TestClient(ctx.app, ctx.config.WEB_ORIGIN);
+      await other.registerAndLogin({
+        email: 'b@example.com',
+        password: 'another long passphrase',
+        inviteCode: ctx.config.REGISTRATION_CODE,
+      });
+      const resB = await sync([], 0, other);
+      expect(resB.json().cardStates).toEqual([]);
+
+      // the first user’s cards are untouched
+      expect(await userCardRows()).toHaveLength(2);
+    });
+
+    it('response validates against syncResponseSchema', async () => {
+      const res = await sync([makeEvent(1), makeEvent(2)]);
+      expect(res.statusCode).toBe(200); // the route parses the envelope with syncResponseSchema.parse
+      syncResponseSchema.parse(res.json()); // throws unless the body matches the response schema
+    });
+
+    it('rolls back user_card writes on failure', async () => {
+      await installUserCardFailure(ctx.db);
+      try {
+        const res = await sync([makeEvent(1), makeEvent(2)]);
+        expect(res.statusCode).toBe(500);
+        expect(await findStoredEventsByUserId(ctx.db, userId)).toHaveLength(0);
+        expect(await lastSeq()).toBe(0);
+        expect(await ctx.sql`SELECT * FROM user_card WHERE user_id = ${userId}`).toHaveLength(0);
+      } finally {
+        await removeUserCardFailure(ctx.db);
+      }
+      const retry = await sync([makeEvent(1), makeEvent(2)]);
+      expect(retry.statusCode).toBe(200);
+      expect(await lastSeq()).toBe(2);
+      expect(await ctx.sql`SELECT * FROM user_card WHERE user_id = ${userId}`).toHaveLength(1);
     });
   });
 });
