@@ -81,3 +81,6 @@ export const userCard = pgTable(
     check('user_card_difficulty_chk', sql`${t.difficulty} between 1 and 10`),
   ]
 );
+
+export type UserCard = typeof userCard.$inferSelect;
+export type NewUserCard = typeof userCard.$inferInsert;
