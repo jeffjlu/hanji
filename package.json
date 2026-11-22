@@ -19,7 +19,8 @@
     "dev": "pnpm --filter @hanji/api run dev & pnpm --filter @hanji/web run dev",
     "e2e": "node e2e/prepare-db.ts && playwright test",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "sim:review-load": "pnpm --filter @hanji/simulations run review-load"
   },
   "devDependencies": {
     "@playwright/test": "^1.65.0",
