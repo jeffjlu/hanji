@@ -339,6 +339,9 @@ importers:
       ts-fsrs:
         specifier: 6.0.0
         version: 6.0.0
+      wanakana:
+        specifier: 5.3.1
+        version: 5.3.1
     devDependencies:
       fast-check:
         specifier: ^4.10.2
@@ -3631,6 +3634,10 @@ packages:
       jsdom:
         optional: true
 
+  wanakana@5.3.1:
+    resolution: {integrity: sha512-OSDqupzTlzl2LGyqTdhcXcl6ezMiFhcUwLBP8YKaBIbMYW1wAwDvupw2T9G9oVaKT9RmaSpyTXjxddFPUcFFIw==}
+    engines: {node: '>=12'}
+
   which@2.0.2:
     resolution: {integrity: sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==}
     engines: {node: '>= 8'}
@@ -6705,6 +6712,8 @@ snapshots:
       '@types/node': 26.6.6
     transitivePeerDependencies:
       - msw
+
+  wanakana@5.3.1: {}
 
   which@2.0.2:
     dependencies:

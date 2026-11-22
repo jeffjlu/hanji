@@ -15,8 +15,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@hanji/schemas": "workspace:*",
     "ts-fsrs": "6.0.0",
-    "@hanji/schemas": "workspace:*"
+    "wanakana": "5.3.1"
   },
   "devDependencies": {
     "fast-check": "^4.10.2",
