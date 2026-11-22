@@ -84,8 +84,9 @@ describe('gradeAnswer: slowness rule', () => {
     );
   });
 
-  it('applies when responseMs is 0', () => {
+  it('does not apply with a non-positive median', () => {
     expect(grade({ medianMs: 0, sampleCount: MIN_SAMPLES_FOR_SLOWNESS })).toBe(Rating.Good);
+    expect(grade({ medianMs: -1, responseMs: 1 })).toBe(Rating.Good);
   });
 });
 

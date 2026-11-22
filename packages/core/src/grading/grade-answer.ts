@@ -24,5 +24,7 @@ function enoughSamples(input: GradeInput) {
 }
 
 function slowResponse(input: GradeInput) {
-  return input.medianMs && input.responseMs > SLOW_FACTOR * input.medianMs;
+  return (
+    input.medianMs !== null && input.medianMs > 0 && input.responseMs > SLOW_FACTOR * input.medianMs
+  );
 }
