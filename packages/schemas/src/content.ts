@@ -48,3 +48,8 @@ export const manifestSchema = z.object({
   contentVersion: z.string(),
   units: unitDtoSchema.extend({ cardCount: z.int().nonnegative() }).array(),
 });
+
+export type EntryDto = z.infer<typeof entryDtoSchema>;
+export type KanjiDto = z.infer<typeof kanjiDtoSchema>;
+export type CardDto = z.infer<typeof cardDtoSchema>;
+export type UnitDto = z.infer<typeof unitDtoSchema>;
