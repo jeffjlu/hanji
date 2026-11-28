@@ -1,0 +1,213 @@
+{
+  "format": "hanji-seed/1",
+  "language": "ja",
+  "sources": [
+    {
+      "id": "hand-written",
+      "kind": "hand-written",
+      "author": "Hanji maintainers",
+      "description": "Phase 1 placeholder content. Glosses, readings and frequency ranks were written for this project, not copied from JMdict, KANJIDIC2 or Kanjium. Ranks are rough estimates on a project-local scale, chosen so every item has three distractors; the Phase 3 pipeline replaces them."
+    }
+  ],
+  "units": [
+    { "slug": "food-and-drink", "title": "Food and drink", "position": 1 },
+    { "slug": "food-kanji", "title": "Kanji: food and drink", "position": 2 }
+  ],
+  "entries": [
+    {
+      "script": "水",
+      "reading": "みず",
+      "gloss": ["water"],
+      "pos": "noun",
+      "freqRank": 120,
+      "unit": "food-and-drink",
+      "source": "hand-written"
+    },
+    {
+      "script": "お茶",
+      "reading": "おちゃ",
+      "gloss": ["tea", "green tea"],
+      "pos": "noun",
+      "freqRank": 300,
+      "unit": "food-and-drink",
+      "source": "hand-written"
+    },
+    {
+      "script": "コーヒー",
+      "reading": "コーヒー",
+      "gloss": ["coffee"],
+      "pos": "noun",
+      "freqRank": 340,
+      "unit": "food-and-drink",
+      "source": "hand-written"
+    },
+    {
+      "script": "ご飯",
+      "reading": "ごはん",
+      "gloss": ["cooked rice", "meal"],
+      "pos": "noun",
+      "freqRank": 210,
+      "unit": "food-and-drink",
+      "source": "hand-written"
+    },
+    {
+      "script": "肉",
+      "reading": "にく",
+      "gloss": ["meat"],
+      "pos": "noun",
+      "freqRank": 260,
+      "unit": "food-and-drink",
+      "source": "hand-written"
+    },
+    {
+      "script": "魚",
+      "reading": "さかな",
+      "gloss": ["fish"],
+      "pos": "noun",
+      "freqRank": 280,
+      "unit": "food-and-drink",
+      "source": "hand-written"
+    },
+    {
+      "script": "料理",
+      "reading": "りょうり",
+      "gloss": ["cooking", "cuisine", "dish"],
+      "pos": "noun",
+      "freqRank": 230,
+      "unit": "food-and-drink",
+      "source": "hand-written"
+    },
+    {
+      "script": "店",
+      "reading": "みせ",
+      "gloss": ["shop", "store"],
+      "pos": "noun",
+      "freqRank": 150,
+      "unit": "food-and-drink",
+      "source": "hand-written"
+    },
+    {
+      "script": "食べる",
+      "reading": "たべる",
+      "gloss": ["to eat"],
+      "pos": "verb",
+      "freqRank": 140,
+      "unit": "food-and-drink",
+      "source": "hand-written"
+    },
+    {
+      "script": "飲む",
+      "reading": "のむ",
+      "gloss": ["to drink"],
+      "pos": "verb",
+      "freqRank": 190,
+      "unit": "food-and-drink",
+      "source": "hand-written"
+    },
+    {
+      "script": "買う",
+      "reading": "かう",
+      "gloss": ["to buy"],
+      "pos": "verb",
+      "freqRank": 160,
+      "unit": "food-and-drink",
+      "source": "hand-written"
+    },
+    {
+      "script": "行く",
+      "reading": "いく",
+      "gloss": ["to go"],
+      "pos": "verb",
+      "freqRank": 20,
+      "unit": "food-and-drink",
+      "source": "hand-written"
+    }
+  ],
+  "kanji": [
+    {
+      "glyph": "水",
+      "onReadings": ["スイ"],
+      "kunReadings": ["みず"],
+      "gloss": ["water"],
+      "freqRank": 110,
+      "source": "hand-written"
+    },
+    {
+      "glyph": "食",
+      "onReadings": ["ショク", "ジキ"],
+      "kunReadings": ["た.べる", "く.う"],
+      "gloss": ["eat", "food"],
+      "freqRank": 130,
+      "source": "hand-written"
+    },
+    {
+      "glyph": "飲",
+      "onReadings": ["イン"],
+      "kunReadings": ["の.む"],
+      "gloss": ["drink"],
+      "freqRank": 240,
+      "source": "hand-written"
+    },
+    {
+      "glyph": "肉",
+      "onReadings": ["ニク"],
+      "kunReadings": [],
+      "gloss": ["meat"],
+      "freqRank": 200,
+      "source": "hand-written"
+    },
+    {
+      "glyph": "魚",
+      "onReadings": ["ギョ"],
+      "kunReadings": ["さかな", "うお"],
+      "gloss": ["fish"],
+      "freqRank": 250,
+      "source": "hand-written"
+    },
+    {
+      "glyph": "店",
+      "onReadings": ["テン"],
+      "kunReadings": ["みせ"],
+      "gloss": ["shop", "store"],
+      "freqRank": 170,
+      "source": "hand-written"
+    }
+  ],
+  "cards": [
+    { "kind": "recognition", "entry": "水|みず", "unit": "food-and-drink", "position": 1 },
+    { "kind": "production", "entry": "水|みず", "unit": "food-and-drink", "position": 2 },
+    { "kind": "recognition", "entry": "お茶|おちゃ", "unit": "food-and-drink", "position": 3 },
+    { "kind": "production", "entry": "お茶|おちゃ", "unit": "food-and-drink", "position": 4 },
+    {
+      "kind": "recognition",
+      "entry": "コーヒー|コーヒー",
+      "unit": "food-and-drink",
+      "position": 5
+    },
+    { "kind": "production", "entry": "コーヒー|コーヒー", "unit": "food-and-drink", "position": 6 },
+    { "kind": "recognition", "entry": "ご飯|ごはん", "unit": "food-and-drink", "position": 7 },
+    { "kind": "production", "entry": "ご飯|ごはん", "unit": "food-and-drink", "position": 8 },
+    { "kind": "recognition", "entry": "肉|にく", "unit": "food-and-drink", "position": 9 },
+    { "kind": "production", "entry": "肉|にく", "unit": "food-and-drink", "position": 10 },
+    { "kind": "recognition", "entry": "魚|さかな", "unit": "food-and-drink", "position": 11 },
+    { "kind": "production", "entry": "魚|さかな", "unit": "food-and-drink", "position": 12 },
+    { "kind": "recognition", "entry": "料理|りょうり", "unit": "food-and-drink", "position": 13 },
+    { "kind": "production", "entry": "料理|りょうり", "unit": "food-and-drink", "position": 14 },
+    { "kind": "recognition", "entry": "店|みせ", "unit": "food-and-drink", "position": 15 },
+    { "kind": "production", "entry": "店|みせ", "unit": "food-and-drink", "position": 16 },
+    { "kind": "recognition", "entry": "食べる|たべる", "unit": "food-and-drink", "position": 17 },
+    { "kind": "production", "entry": "食べる|たべる", "unit": "food-and-drink", "position": 18 },
+    { "kind": "recognition", "entry": "飲む|のむ", "unit": "food-and-drink", "position": 19 },
+    { "kind": "production", "entry": "飲む|のむ", "unit": "food-and-drink", "position": 20 },
+    { "kind": "recognition", "entry": "買う|かう", "unit": "food-and-drink", "position": 21 },
+    { "kind": "production", "entry": "買う|かう", "unit": "food-and-drink", "position": 22 },
+    { "kind": "recognition", "entry": "行く|いく", "unit": "food-and-drink", "position": 23 },
+    { "kind": "production", "entry": "行く|いく", "unit": "food-and-drink", "position": 24 },
+    { "kind": "kanji", "kanji": "水", "unit": "food-kanji", "position": 1 },
+    { "kind": "kanji", "kanji": "食", "unit": "food-kanji", "position": 2 },
+    { "kind": "kanji", "kanji": "飲", "unit": "food-kanji", "position": 3 },
+    { "kind": "kanji", "kanji": "肉", "unit": "food-kanji", "position": 4 },
+    { "kind": "kanji", "kanji": "魚", "unit": "food-kanji", "position": 5 },
+    { "kind": "kanji", "kanji": "店", "unit": "food-kanji", "position": 6 }
+  ]
+}

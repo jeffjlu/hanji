@@ -44,8 +44,10 @@ pnpm db:generate
 # Apply migrations
 pnpm db:migrate
 
-# Seed database (placeholder in Phase 0)
+# Validate and load content (idempotent; packages/db/seed/seed.json by default)
 pnpm db:seed
+# Load another seed file (path relative to where you run pnpm)
+pnpm db:seed -- path/to/seed.json
 ```
 
 ### Development
