@@ -4,3 +4,4 @@ export * from './migrate.js';
 export { loadDotEnv } from './load-env.js';
 export * from './schema/index.js';
 export * from './queries/index.js';
+export * from './seed/index.js';
